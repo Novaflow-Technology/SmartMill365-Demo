@@ -24,7 +24,7 @@ class _SecComparisonInsightWidgetState extends State<SecComparisonInsightWidget>
   late SecComparisonInsightModel _model;
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
-  static const String _baseUrl = 'https://api-ui7wk3sz2q-uc.a.run.app';
+  static const String _baseUrl = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api';
 
   List<FacilityData> _facilities = [];
   final Map<String, double> _facilityEnergy = {};

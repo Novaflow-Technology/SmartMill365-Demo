@@ -14,8 +14,12 @@ class AppConfig {
   static final AppConfig _instance = AppConfig._();
   static AppConfig get instance => _instance;
 
-  static const String _fallbackUrl = 'https://api-ui7wk3sz2q-uc.a.run.app';
-  static const String _crudUrl = 'https://api-ic7ypg6ukq-uc.a.run.app';
+  // SmartMill's own deployed API (smartmill365-demo project). One function
+  // handles both data (Influx/MySQL) and CRUD (users, factory) routes, unlike
+  // the SmartFactory app this was forked from, which splits them across ui7
+  // and ic7 — both constants point at the same SmartMill URL for that reason.
+  static const String _fallbackUrl = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api';
+  static const String _crudUrl = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api';
 
   String _apiBase = _crudUrl;
   String _dataApiBase = _fallbackUrl;
@@ -184,6 +188,14 @@ class AppConfig {
   /// The customer chosen last time, if any. Applied before the account
   /// resolves a client, so a deliberate choice outranks the account — but
   /// never a customer site's own lock.
+  ///
+  /// The remembered id is only trusted after checking it still exists on
+  /// *this* deployment's own backend. A browser that had a client chosen
+  /// before this app was pointed at its own API (or before that client was
+  /// ever removed) would otherwise keep pinning every request to an id that
+  /// no longer means anything here, breaking in a way that looks nothing
+  /// like a stale setting — e.g. "No Firestore credentials for strict client
+  /// DEV" several screens away from where the override was ever set.
   static Future<bool> _applySavedOverride() async {
     // A choice remembered in this browser never outranks the site's own lock.
     if (SiteTenant.lockedClientId != null) return false;
@@ -192,9 +204,25 @@ class AppConfig {
       final raw = prefs.getString(_overrideKey) ?? '';
       if (raw.isEmpty) return false;
       final parts = raw.split('|');
-      if (parts.first.trim().isEmpty) return false;
-      _instance._clientId = parts.first.trim();
-      _instance._clientName = parts.length > 1 ? parts[1] : parts.first.trim();
+      final id = parts.first.trim();
+      if (id.isEmpty) return false;
+
+      final res = await http
+          .get(Uri.parse('$_fallbackUrl/integrationConfig/loadConfigs'))
+          .timeout(const Duration(seconds: 10));
+      if (res.statusCode == 200) {
+        final clients = jsonDecode(res.body);
+        final stillExists = clients is List && clients.any((c) => c is Map && c['id'] == id);
+        if (!stillExists) {
+          await prefs.remove(_overrideKey);
+          return false;
+        }
+      }
+      // Couldn't check (offline/timeout) — keep the override rather than
+      // discard a possibly-valid choice on a flaky connection.
+
+      _instance._clientId = id;
+      _instance._clientName = parts.length > 1 ? parts[1] : id;
       return true;
     } catch (_) {
       return false;

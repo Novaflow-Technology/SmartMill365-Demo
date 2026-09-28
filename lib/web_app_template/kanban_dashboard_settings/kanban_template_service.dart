@@ -2,7 +2,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
-const String _baseUrl = 'https://api-ui7wk3sz2q-uc.a.run.app/kanban-settings';
+const String _baseUrl = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api/kanban-settings';
 
 class KanbanTemplateService {
   // Save/Create a new template

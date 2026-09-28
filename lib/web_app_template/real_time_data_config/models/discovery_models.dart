@@ -1,8 +1,15 @@
 class InfluxTag {
+  /// Historically doubles as the owning device's id, not a real Influx
+  /// measurement name — kept as-is since other code already relies on that.
   final String measurement;
   final String fieldName;
   final String tagName;
   final String unit;
+  /// The field's real Influx measurement (e.g. "PSTR_psi"), when the source
+  /// client has more than one and the backend could tell them apart. Empty
+  /// for a client with one fixed measurement, where [measurement] already
+  /// doubling as the device id is unambiguous.
+  final String realMeasurement;
   dynamic lastValue;
   DateTime? lastUpdate;
 
@@ -11,6 +18,7 @@ class InfluxTag {
     required this.fieldName,
     this.tagName = '',
     this.unit = '',
+    this.realMeasurement = '',
     this.lastValue,
     this.lastUpdate,
   });
@@ -20,6 +28,7 @@ class InfluxTag {
         'fieldName': fieldName,
         'tagName': tagName,
         'unit': unit,
+        'realMeasurement': realMeasurement,
         'lastValue': lastValue?.toString(),
         'lastUpdate': lastUpdate?.toIso8601String(),
       };
@@ -29,6 +38,7 @@ class InfluxTag {
         fieldName: m['fieldName'] ?? '',
         tagName: m['tagName'] ?? m['fieldName'] ?? '',
         unit: m['unit'] ?? '',
+        realMeasurement: m['realMeasurement'] ?? '',
         lastValue: m['lastValue'],
         lastUpdate: m['lastUpdate'] != null ? DateTime.tryParse(m['lastUpdate']) : null,
       );

@@ -9,7 +9,7 @@ import '/flutter_flow/flutter_flow_util.dart';
 
 const _kCardBg = Color.fromRGBO(0, 4, 51, 1);
 const _kBorderRadius = 16.0;
-const _kBaseUrl = 'https://api-ui7wk3sz2q-uc.a.run.app/kanban-settings';
+const _kBaseUrl = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api/kanban-settings';
 
 BoxDecoration kanbanCardDecoration(BuildContext context) {
   final primary = FlutterFlowTheme.of(context).primary;

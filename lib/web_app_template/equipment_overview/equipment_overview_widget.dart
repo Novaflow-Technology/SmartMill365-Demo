@@ -54,9 +54,9 @@ class _EquipmentOverviewWidgetState extends State<EquipmentOverviewWidget> {
   Map<String, Map<String, dynamic>> equipmentPerformanceData = {};
 
   // Firestore-backed endpoints (production areas, equipment list) — intechsf365
-  static const String _baseUrl = 'https://api-ic7ypg6ukq-uc.a.run.app';
+  static const String _baseUrl = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api';
   // MySQL-backed endpoints (equipment status, process IDs, OEE) — smartmachine
-  static const String _dataUrl = 'https://api-ui7wk3sz2q-uc.a.run.app';
+  static const String _dataUrl = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api';
 
   @override
   void initState() {

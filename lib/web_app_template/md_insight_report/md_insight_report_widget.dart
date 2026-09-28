@@ -338,7 +338,7 @@ class _MdInsightReportWidgetState extends State<MdInsightReportWidget> {
     if (_selectedDeviceId.isEmpty) return;
     try {
       final uri = Uri.parse(
-          'https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/power-load-24h/$_selectedDeviceId');
+          'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/power-load-24h/$_selectedDeviceId');
       final response = await http.get(uri, headers: AppConfig.headers);
       if (!mounted) return;
       if (response.statusCode != 200) return;
@@ -384,11 +384,11 @@ class _MdInsightReportWidgetState extends State<MdInsightReportWidget> {
       final results = await Future.wait([
         meterCategoryId.isNotEmpty
             ? http.get(
-                Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/masterBillingConfig/$userUid/$meterCategoryId'),
+                Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/masterBillingConfig/$userUid/$meterCategoryId'),
                 headers: AppConfig.headers)
-            : http.get(Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/masterBillingConfig/$userUid/active'),
+            : http.get(Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/masterBillingConfig/$userUid/active'),
                 headers: AppConfig.headers),
-        http.get(Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/masterBillingConfig/$userUid/electricityTariff'),
+        http.get(Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/masterBillingConfig/$userUid/electricityTariff'),
             headers: AppConfig.headers),
       ]);
       if (!mounted) return;
@@ -396,7 +396,7 @@ class _MdInsightReportWidgetState extends State<MdInsightReportWidget> {
       final tariffResponse = results[1];
 
       if (meterCategoryId.isNotEmpty && response.statusCode != 200) {
-        response = await http.get(Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/masterBillingConfig/$userUid/active'),
+        response = await http.get(Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/masterBillingConfig/$userUid/active'),
             headers: AppConfig.headers);
         if (!mounted) return;
       }

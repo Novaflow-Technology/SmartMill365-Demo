@@ -43,7 +43,7 @@ class _AddGroupDialogState extends State<AddGroupDialog> {
 
     try {
       final url =
-          Uri.parse('https://api-ic7ypg6ukq-uc.a.run.app/groups/add');
+          Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/groups/add');
       final response = await http.post(
         url,
         headers: {'Content-Type': 'application/json'},

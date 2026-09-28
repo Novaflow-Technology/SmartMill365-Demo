@@ -23,7 +23,7 @@ import 'package:smartmachine365/web_app_template/master_billing_configuration/bi
 import 'package:smartmachine365/web_app_template/master_billing_configuration/deploy_button_widget.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 
-const String _kApiBaseUrl = 'https://api-ui7wk3sz2q-uc.a.run.app';
+const String _kApiBaseUrl = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api';
 
 class ActiveCategory {
   final String id;

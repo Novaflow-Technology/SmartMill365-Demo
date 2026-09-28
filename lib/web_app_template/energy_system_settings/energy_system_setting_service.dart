@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class EnergySystemSettingsService {
   // Replace with your Firebase Functions URL
-  static const String baseUrl = 'https://api-ic7ypg6ukq-uc.a.run.app/energy-settings';
+  static const String baseUrl = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energy-settings';
 
   // Get settings for a user
   static Future<Map<String, dynamic>> getSettings(String uid) async {

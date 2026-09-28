@@ -8,9 +8,9 @@ const router = express.Router();
 // Default Danapac pool — kept explicitly as fallback for untagged requests
 // (Danapac domain / legacy callers without x-client-id). Same as energyComparison.js.
 const pool = mysql.createPool({
-  host: "124.217.236.76",
+  host: "",
   user: "novaflow",
-  password: "Nov@flow6889",
+  password: "",
   database: "Danapac_Database",
 }).promise();
 

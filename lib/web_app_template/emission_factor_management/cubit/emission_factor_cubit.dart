@@ -11,7 +11,7 @@ import 'emission_factor_state.dart';
 import '../emission_factor_model.dart';
 
 class EmissionFactorCubit extends Cubit<EmissionFactorState> {
-  static const _apiBase = 'https://api-ic7ypg6ukq-uc.a.run.app';
+  static const _apiBase = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api';
   static const _headers = {'Content-Type': 'application/json'};
 
   StreamSubscription<QuerySnapshot>? _factorsSub;

@@ -109,7 +109,7 @@ class _ExpansionDetailsWidgetState extends State<ExpansionDetailsWidget> {
                   color: Color(0xFF00D4FF), height: 1, thickness: 0.2),
               // Rows
               ...widget.device.tags.map((tag) {
-                final key = '${tag.measurement}.${tag.fieldName}';
+                final key = '${tag.measurement}.${tag.realMeasurement}.${tag.fieldName}';
                 final value = state.values[key];
                 final displayValue =
                     (value != null && value.toString().isNotEmpty)
@@ -143,7 +143,7 @@ class _ExpansionDetailsWidgetState extends State<ExpansionDetailsWidget> {
                       ),
                       Expanded(
                         flex: 2,
-                        child: Text(tag.measurement,
+                        child: Text(tag.realMeasurement.isEmpty ? '—' : tag.realMeasurement,
                             style: GoogleFonts.poppins(
                                 color: Colors.white54, fontSize: 11)),
                       ),

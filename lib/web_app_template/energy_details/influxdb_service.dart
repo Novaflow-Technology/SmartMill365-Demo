@@ -73,8 +73,8 @@ class SensorData {
 /// Service for fetching real-time data from InfluxDB API
 class InfluxDBService {
   String get baseUrl =>
-      'https://api-ui7wk3sz2q-uc.a.run.app/energyDetailsInfluxDb';
-  static const String _ui7Base = 'https://api-ui7wk3sz2q-uc.a.run.app';
+      'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetailsInfluxDb';
+  static const String _ui7Base = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api';
   Map<String, String> get _headers => {
         'Content-Type': 'application/json',
         if (AppConfig.clientId.isNotEmpty) 'x-client-id': AppConfig.clientId,

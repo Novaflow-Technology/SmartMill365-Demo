@@ -5,7 +5,7 @@ import 'package:smartmachine365/auth/firebase_auth/auth_util.dart';
 import 'package:smartmachine365/services/app_config.dart';
 import 'integration_config_models.dart';
 
-const _apiBaseFallback = 'https://api-ui7wk3sz2q-uc.a.run.app';
+const _apiBaseFallback = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api';
 
 // ── States ────────────────────────────────────────────────────────────────────
 abstract class IntegrationConfigState {}

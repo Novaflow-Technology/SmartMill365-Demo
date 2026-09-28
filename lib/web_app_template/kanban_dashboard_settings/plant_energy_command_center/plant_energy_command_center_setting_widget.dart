@@ -648,7 +648,7 @@ class _PlantEnergyCommandCenterSettingWidgetState extends State<PlantEnergyComma
           : '';
       final res = await http
           .get(
-            Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/plant-energy-command-center/$uid$qp'),
+            Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/plant-energy-command-center/$uid$qp'),
             headers: AppConfig.headers,
           )
           .timeout(const Duration(seconds: 10));
@@ -672,7 +672,7 @@ class _PlantEnergyCommandCenterSettingWidgetState extends State<PlantEnergyComma
             try {
               final fbRes = await http
                   .get(
-                    Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/plant-energy-command-center/$fallbackUid$qp'),
+                    Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/plant-energy-command-center/$fallbackUid$qp'),
                     headers: AppConfig.headers,
                   )
                   .timeout(const Duration(seconds: 10));
@@ -703,7 +703,7 @@ class _PlantEnergyCommandCenterSettingWidgetState extends State<PlantEnergyComma
     try {
       final res = await http
           .get(
-            Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/kanban-settings/list'),
+            Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/kanban-settings/list'),
             headers: AppConfig.headers,
           )
           .timeout(const Duration(seconds: 15));
@@ -1193,7 +1193,7 @@ class _PlantEnergyCommandCenterSettingWidgetState extends State<PlantEnergyComma
       }
       final res = await http
           .post(
-            Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/plant-energy-command-center/$uid'),
+            Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/plant-energy-command-center/$uid'),
             headers: {...AppConfig.headers, 'Content-Type': 'application/json'},
             body: json.encode(body),
           )

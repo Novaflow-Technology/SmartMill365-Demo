@@ -6,7 +6,7 @@ class ProductionOutputService {
   // Routes through AppConfig so every request carries x-client-id — the
   // backend (functions/api/productionOutputLogFunctions.js) is per-client
   // MySQL, keyed off that header, not a single shared Firestore collection.
-  static String get _base => 'https://api-ui7wk3sz2q-uc.a.run.app/productionOutputLog';
+  static String get _base => 'https://us-central1-smartmill365-demo.cloudfunctions.net/api/productionOutputLog';
 
   // Returns empty list on 404 or any network failure so the table stays blank
   static Future<List<Map<String, dynamic>>> getAll() async {

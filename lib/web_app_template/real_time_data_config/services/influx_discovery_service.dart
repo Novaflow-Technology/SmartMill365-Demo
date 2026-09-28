@@ -4,42 +4,57 @@ import 'package:http/http.dart' as http;
 import '../models/discovery_models.dart';
 
 /// Discovery service — proxies InfluxDB via discoverydevice.js API.
-/// Bucket: ENERGY_DEMO | Measurement: power_meter
-/// Tags:   device_id, device_name, site_id
+/// Measurement and tags are whatever the active client's integration config
+/// says (one fixed measurement, or every measurement in the bucket for a
+/// client like SmartMill that doesn't have a single one) — never fixed here.
 class InfluxDiscoveryService {
   static String get _apiBase => '${AppConfig.dataApiBase}/discoveryDevice';
-  static const _measurement = 'power_meter';
-
-  // Confirmed 17 fields from power_meter measurement
-  static const _knownFields = [
-    'P_kW', 'Q_VAR', 'S_VA',
-    'UAB', 'UBC', 'UCA', 'Uavg',
-    'IA', 'IB', 'IC', 'Iavg',
-    'PF', 'PeakDemand', 'Freq',
-    'Edel', 'Erec', 'status',
-  ];
 
   // ── Discovery ──────────────────────────────────────────────────────────────
 
+  /// Set after every [discoverAllDevices] call — null on success (even a
+  /// genuinely empty one), or the real reason nothing could be fetched, so
+  /// the UI can tell "SmartMill has no devices" apart from "couldn't reach
+  /// SmartMill's API" instead of showing the same "No devices found" either way.
+  String? lastError;
+
   Future<List<DiscoveredDevice>> discoverAllDevices({String start = '-24h'}) async {
+    lastError = null;
+    // The very first call after a cold boot can race AppConfig's own init —
+    // make sure the client id is resolved before asking for its devices,
+    // instead of silently sending an unscoped request that comes back empty.
+    if (AppConfig.clientId.isEmpty) await AppConfig.init();
+    if (AppConfig.clientId.isEmpty) {
+      lastError = 'No active client resolved for this session — the app never got past AppConfig.init().';
+      return [];
+    }
+
     // Fetch enriched device list (InfluxDB + MySQL if configured) and fields in parallel.
     // Fallback: if enriched endpoint fails, fall back to InfluxDB-only meta — data is never lost.
     List<Map<String, dynamic>> enrichedList = [];
     try {
       enrichedList = await _getEnriched(start: start);
-    } catch (_) {
-      // Enriched failed — fall back to plain meta
+    } catch (e) {
+      // Enriched failed — fall back to plain meta, but remember why in case
+      // that fails too.
+      lastError = 'enriched: $e';
       enrichedList = [];
     }
 
     // If enriched returned nothing, fall back to InfluxDB meta
     if (enrichedList.isEmpty) {
-      final results = await Future.wait([
-        _getDevices(start: start),
-        _getMeta(start: start),
-      ]);
-      final deviceIds = results[0] as List<String>;
-      final metaMap   = results[1] as Map<String, Map<String, dynamic>>;
+      List<String> deviceIds = [];
+      Map<String, Map<String, dynamic>> metaMap = {};
+      try {
+        final results = await Future.wait([
+          _getDevices(start: start),
+          _getMeta(start: start),
+        ]);
+        deviceIds = results[0] as List<String>;
+        metaMap   = results[1] as Map<String, Map<String, dynamic>>;
+      } catch (e) {
+        lastError = '${lastError != null ? '$lastError; ' : ''}devices: $e';
+      }
       if (deviceIds.isEmpty) return [];
       final fieldResults = await Future.wait(
         deviceIds.map((id) => _getFields(id, start: start)),
@@ -124,19 +139,23 @@ class InfluxDiscoveryService {
 
   // ── Realtime values ────────────────────────────────────────────────────────
 
+  /// Latest value for every tag, keyed "<deviceId>.<realMeasurement>.<field>"
+  /// — the measurement is part of the key because SmartMill (and any other
+  /// client scanning every measurement) can have the same field name under
+  /// several real measurements for one device; keying on field name alone
+  /// would make those overwrite each other and show as identical values.
   Future<Map<String, dynamic>> getBatchRealtimeValues(List<InfluxTag> tags) async {
     if (tags.isEmpty) return {};
 
     final grouped = <String, List<InfluxTag>>{};
     for (final t in tags) {
-      grouped.putIfAbsent(t.measurement, () => []).add(t);
+      grouped.putIfAbsent(t.measurement, () => []).add(t); // t.measurement = device id here
     }
 
     final result = <String, dynamic>{};
     await Future.wait(grouped.entries.map((entry) async {
-      final deviceId   = entry.key;
-      final fieldNames = entry.value.map((t) => t.fieldName).join(',');
-      final values     = await _getRealtime(deviceId, fields: fieldNames);
+      final deviceId = entry.key;
+      final values = await _getRealtime(deviceId, entry.value);
       result.addAll(values);
     }));
     return result;
@@ -146,13 +165,14 @@ class InfluxDiscoveryService {
 
   Future<List<HistoryPoint>> fetchFieldHistory(
       String deviceId, String fieldName,
-      {String range = '-1h'}) async {
+      {String range = '-1h', String? realMeasurement}) async {
     try {
       final uri = Uri.parse('$_apiBase/history/$deviceId').replace(
         queryParameters: {
           'field':  fieldName,
           'start':  range,
           'window': '1m',
+          if (realMeasurement != null && realMeasurement.isNotEmpty) 'measurement': realMeasurement,
         },
       );
       final res = await http.get(uri, headers: AppConfig.headers).timeout(const Duration(seconds: 20));
@@ -172,81 +192,77 @@ class InfluxDiscoveryService {
 
   // ── Private API calls ──────────────────────────────────────────────────────
 
+  // These three throw on failure rather than swallowing it — discoverAllDevices
+  // needs to tell a request that genuinely failed apart from one that
+  // succeeded and truly found nothing, and a caller further down the fallback
+  // chain (refreshSingleDevice) already wraps its own call in try/catch.
+
   Future<List<Map<String, dynamic>>> _getEnriched({required String start}) async {
-    try {
-      final uri = Uri.parse('$_apiBase/enriched')
-          .replace(queryParameters: {'start': start});
-      final res = await http.get(uri, headers: AppConfig.headers).timeout(const Duration(seconds: 30));
-      if (res.statusCode != 200) return [];
-      final data = json.decode(res.body) as List<dynamic>;
-      return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-    } catch (_) {
-      return [];
-    }
+    final uri = Uri.parse('$_apiBase/enriched')
+        .replace(queryParameters: {'start': start});
+    final res = await http.get(uri, headers: AppConfig.headers).timeout(const Duration(seconds: 30));
+    if (res.statusCode != 200) throw Exception('HTTP ${res.statusCode}: ${res.body}');
+    final data = json.decode(res.body) as List<dynamic>;
+    return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
   Future<List<String>> _getDevices({required String start}) async {
-    try {
-      final uri = Uri.parse('$_apiBase/devices')
-          .replace(queryParameters: {'start': start});
-      final res = await http.get(uri, headers: AppConfig.headers).timeout(const Duration(seconds: 30));
-      if (res.statusCode != 200) return [];
-      final data = json.decode(res.body) as List<dynamic>;
-      return data
-          .map((e) => (e as Map<String, dynamic>)['device_id'] as String? ?? '')
-          .where((id) => id.isNotEmpty)
-          .toList();
-    } catch (_) {
-      return [];
-    }
+    final uri = Uri.parse('$_apiBase/devices')
+        .replace(queryParameters: {'start': start});
+    final res = await http.get(uri, headers: AppConfig.headers).timeout(const Duration(seconds: 30));
+    if (res.statusCode != 200) throw Exception('HTTP ${res.statusCode}: ${res.body}');
+    final data = json.decode(res.body) as List<dynamic>;
+    return data
+        .map((e) => (e as Map<String, dynamic>)['device_id'] as String? ?? '')
+        .where((id) => id.isNotEmpty)
+        .toList();
   }
 
   Future<Map<String, Map<String, dynamic>>> _getMeta({required String start}) async {
-    try {
-      final uri = Uri.parse('$_apiBase/meta')
-          .replace(queryParameters: {'start': start});
-      final res = await http.get(uri, headers: AppConfig.headers).timeout(const Duration(seconds: 30));
-      if (res.statusCode != 200) return {};
-      final data = json.decode(res.body) as List<dynamic>;
-      return {
-        for (final item in data)
-          if ((item as Map<String, dynamic>)['device_id'] is String &&
-              (item['device_id'] as String).isNotEmpty)
-            item['device_id'] as String: item,
-      };
-    } catch (_) {
-      return {};
-    }
+    final uri = Uri.parse('$_apiBase/meta')
+        .replace(queryParameters: {'start': start});
+    final res = await http.get(uri, headers: AppConfig.headers).timeout(const Duration(seconds: 30));
+    if (res.statusCode != 200) throw Exception('HTTP ${res.statusCode}: ${res.body}');
+    final data = json.decode(res.body) as List<dynamic>;
+    return {
+      for (final item in data)
+        if ((item as Map<String, dynamic>)['device_id'] is String &&
+            (item['device_id'] as String).isNotEmpty)
+          item['device_id'] as String: item,
+    };
   }
 
+  /// Fields SmartMill's (or any client's) own database actually reports for
+  /// this device. Empty on failure or when nothing is found — never a
+  /// guessed field list, which would show values that were never real.
   Future<List<InfluxTag>> _getFields(String deviceId, {required String start}) async {
     try {
       final uri = Uri.parse('$_apiBase/fields/$deviceId')
           .replace(queryParameters: {'start': start});
       final res = await http.get(uri, headers: AppConfig.headers).timeout(const Duration(seconds: 20));
-      if (res.statusCode != 200) return _fallbackTags(deviceId);
+      if (res.statusCode != 200) return const [];
       final body   = json.decode(res.body) as Map<String, dynamic>;
       final fields = body['fields'] as List<dynamic>? ?? [];
-      if (fields.isEmpty) return _fallbackTags(deviceId);
       return fields.map((f) {
         final field = f['field'] as String? ?? '';
-        return field.isNotEmpty
-            ? InfluxTag(
-                measurement: deviceId, // used as group key in getBatchRealtimeValues
-                fieldName:   field,
-                tagName:     field,
-                unit:        _inferUnit(field))
-            : null;
+        if (field.isEmpty) return null;
+        return InfluxTag(
+          measurement: deviceId, // used as group key in getBatchRealtimeValues
+          fieldName:   field,
+          tagName:     field,
+          realMeasurement: (f['measurement'] as String?) ?? '',
+        );
       }).whereType<InfluxTag>().toList();
     } catch (_) {
-      return _fallbackTags(deviceId);
+      return const [];
     }
   }
 
-  Future<Map<String, dynamic>> _getRealtime(String deviceId, {String? fields}) async {
+  Future<Map<String, dynamic>> _getRealtime(String deviceId, List<InfluxTag> tags) async {
+    final fieldNames = tags.map((t) => t.fieldName).toSet().join(',');
     try {
       final params = <String, String>{};
-      if (fields != null && fields.isNotEmpty) params['fields'] = fields;
+      if (fieldNames.isNotEmpty) params['fields'] = fieldNames;
       final uri = Uri.parse('$_apiBase/realtime/$deviceId')
           .replace(queryParameters: params.isNotEmpty ? params : null);
       final res = await http.get(uri, headers: AppConfig.headers).timeout(const Duration(seconds: 15));
@@ -255,9 +271,10 @@ class InfluxDiscoveryService {
         final result = <String, dynamic>{};
         for (final item in data) {
           final field = item['field'] as String?;
+          final measurement = (item['measurement'] as String?) ?? '';
           final value = item['value'];
           if (field != null && field.isNotEmpty) {
-            result['$deviceId.$field'] = value?.toString() ?? '';
+            result['$deviceId.$measurement.$field'] = value?.toString() ?? '';
           }
         }
         // If realtime returned data, use it
@@ -267,38 +284,39 @@ class InfluxDiscoveryService {
 
     // Fallback: /realtime is hardcoded to -5m on the deployed API.
     // Use /history with a wider window to get the most recent values.
-    return _getRealtimeViaHistory(deviceId, fields: fields);
+    return _getRealtimeViaHistory(deviceId, tags);
   }
 
-  Future<Map<String, dynamic>> _getRealtimeViaHistory(String deviceId,
-      {String? fields}) async {
-    final fieldList = fields != null && fields.isNotEmpty
-        ? fields.split(',').map((f) => f.trim()).where((f) => f.isNotEmpty).toList()
-        : _knownFields;
+  Future<Map<String, dynamic>> _getRealtimeViaHistory(String deviceId, List<InfluxTag> tags) async {
+    // No tags to fetch means no fields were discovered for this device —
+    // there's nothing real to guess at, so this returns empty rather than a
+    // fixed list of field names that belong to a different client's schema.
+    if (tags.isEmpty) return {};
 
     // Fetch in batches of 5 to avoid hammering the API.
     final result = <String, dynamic>{};
-    for (int i = 0; i < fieldList.length; i += 5) {
-      final batch = fieldList.skip(i).take(5).toList();
+    for (int i = 0; i < tags.length; i += 5) {
+      final batch = tags.skip(i).take(5).toList();
       final values = await Future.wait(
-        batch.map((f) => _getLatestViaHistory(deviceId, f)),
+        batch.map((t) => _getLatestViaHistory(deviceId, t)),
       );
       for (int j = 0; j < batch.length; j++) {
         if (values[j] != null) {
-          result['$deviceId.${batch[j]}'] = values[j];
+          result['$deviceId.${batch[j].realMeasurement}.${batch[j].fieldName}'] = values[j];
         }
       }
     }
     return result;
   }
 
-  Future<dynamic> _getLatestViaHistory(String deviceId, String field) async {
+  Future<dynamic> _getLatestViaHistory(String deviceId, InfluxTag tag) async {
     try {
       final uri = Uri.parse('$_apiBase/history/$deviceId').replace(
         queryParameters: {
-          'field':  field,
+          'field':  tag.fieldName,
           'start':  '-30m',
           'window': '1m',
+          if (tag.realMeasurement.isNotEmpty) 'measurement': tag.realMeasurement,
         },
       );
       final res = await http.get(uri, headers: AppConfig.headers).timeout(const Duration(seconds: 10));
@@ -312,28 +330,6 @@ class InfluxDiscoveryService {
     }
   }
 
-  List<InfluxTag> _fallbackTags(String deviceId) => _knownFields
-      .map((f) => InfluxTag(
-            measurement: deviceId,
-            fieldName:   f,
-            tagName:     f,
-            unit:        _inferUnit(f)))
-      .toList();
-
-  String _inferUnit(String field) {
-    final f = field.toLowerCase();
-    if (f == 'pf')          return 'PF';
-    if (f == 'freq')        return 'Hz';
-    if (f == 'peakdemand')  return 'kW';
-    if (f == 'p_kw')        return 'kW';
-    if (f == 'q_var')       return 'kVAR';
-    if (f == 's_va')        return 'kVA';
-    if (f == 'status')      return '';
-    if (f.startsWith('edel') || f.startsWith('erec')) return 'kWh';
-    if (f == 'ia' || f == 'ib' || f == 'ic' || f == 'iavg') return 'A';
-    if (f.startsWith('u') || f.startsWith('v'))              return 'V';
-    return '';
-  }
 }
 
 class HistoryPoint {

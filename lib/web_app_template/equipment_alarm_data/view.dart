@@ -58,7 +58,7 @@ class _EquipmentAlarmDataViewState extends State<EquipmentAlarmDataView> {
     try {
       // Define API URL
       String apiUrl =
-          "https://api-ic7ypg6ukq-uc.a.run.app/equipmentAlarmData/$selectedProductionAreaId";
+          "https://us-central1-smartmill365-demo.cloudfunctions.net/api/equipmentAlarmData/$selectedProductionAreaId";
 
       // Send GET request
       final response = await http.get(Uri.parse(apiUrl));
@@ -203,7 +203,7 @@ class _EquipmentAlarmDataViewState extends State<EquipmentAlarmDataView> {
     setState(() => _isLoading = true);
     try {
       final response = await http.get(
-          Uri.parse("https://api-ic7ypg6ukq-uc.a.run.app/productionAreas"));
+          Uri.parse("https://us-central1-smartmill365-demo.cloudfunctions.net/api/productionAreas"));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -220,7 +220,7 @@ class _EquipmentAlarmDataViewState extends State<EquipmentAlarmDataView> {
           selectedProductionAreaId = productionAreaList[0]['name'];
         });
         print(
-            "Successfully get production area from: https://api-ic7ypg6ukq-uc.a.run.app/productionAreas");
+            "Successfully get production area from: https://us-central1-smartmill365-demo.cloudfunctions.net/api/productionAreas");
 
         _model.dropDownValueController?.value = selectedProductionAreaId;
 
@@ -249,7 +249,7 @@ class _EquipmentAlarmDataViewState extends State<EquipmentAlarmDataView> {
     setState(() => _isLoading = true);
     try {
       final response = await http.get(
-          Uri.parse("https://api-ic7ypg6ukq-uc.a.run.app/equipment/statuses"));
+          Uri.parse("https://us-central1-smartmill365-demo.cloudfunctions.net/api/equipment/statuses"));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -265,7 +265,7 @@ class _EquipmentAlarmDataViewState extends State<EquipmentAlarmDataView> {
           ];
         });
         print(
-            "Successfully get status from: https://api-ic7ypg6ukq-uc.a.run.app/equipment/statuses");
+            "Successfully get status from: https://us-central1-smartmill365-demo.cloudfunctions.net/api/equipment/statuses");
       } else {
         throw Exception(
             'Failed to load statuses (status ${response.statusCode})');

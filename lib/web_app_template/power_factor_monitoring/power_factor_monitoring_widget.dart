@@ -76,7 +76,7 @@ class PowerFactorMonitoringWidget extends StatefulWidget {
 }
 
 class _PowerFactorMonitoringWidgetState extends State<PowerFactorMonitoringWidget> {
-  static const String _base = 'https://api-ui7wk3sz2q-uc.a.run.app';
+  static const String _base = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api';
   static const List<Color> _palette = [
     Color(0xFFEF4444), Color(0xFFF97316), Color(0xFFF59E0B), Color(0xFFEAB308),
     Color(0xFF84CC16), Color(0xFF22C55E), Color(0xFF14B8A6), Color(0xFF06B6D4),

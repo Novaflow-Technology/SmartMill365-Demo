@@ -33,7 +33,7 @@ class _GroupViewState extends State<GroupView> {
     setState(() => _isLoading = true);
     try {
       final groupsUrl =
-          Uri.parse('https://api-ic7ypg6ukq-uc.a.run.app/groups/');
+          Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/groups/');
       final groupsResponse = await http.get(groupsUrl);
       if (groupsResponse.statusCode != 200) {
         throw Exception('Error fetching groups: ${groupsResponse.body}');
@@ -46,7 +46,7 @@ class _GroupViewState extends State<GroupView> {
           try {
             final groupId = group['id'];
             final sizeUrl = Uri.parse(
-                'https://api-ic7ypg6ukq-uc.a.run.app/groups/size/$groupId');
+                'https://us-central1-smartmill365-demo.cloudfunctions.net/api/groups/size/$groupId');
             final sizeResponse = await http.get(sizeUrl);
             if (sizeResponse.statusCode == 200) {
               final sizeJson = jsonDecode(sizeResponse.body);
@@ -84,7 +84,7 @@ class _GroupViewState extends State<GroupView> {
   Future<void> deleteGroup(String id) async {
     try {
       final url =
-          Uri.parse('https://api-ic7ypg6ukq-uc.a.run.app/groups/delete/$id');
+          Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/groups/delete/$id');
       final response = await http.delete(url);
       if (response.statusCode == 200) {
         setState(() {

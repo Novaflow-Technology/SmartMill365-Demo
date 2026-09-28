@@ -393,7 +393,7 @@ class _EnergyDetailsWidgetState extends State<EnergyDetailsWidget> {
       final results = await Future.wait([
         http
             .get(
-              Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/energyDetailsInfluxDb/devices'),
+              Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetailsInfluxDb/devices'),
               headers: AppConfig.headers,
             )
             .timeout(const Duration(seconds: 25)),
@@ -461,7 +461,7 @@ class _EnergyDetailsWidgetState extends State<EnergyDetailsWidget> {
       final dateString = DateFormat('yyyy-MM-dd').format(selectedDate);
       final durationParam = selectedDuration;
 
-      final url = 'https://api-ui7wk3sz2q-uc.a.run.app/energyDetailsInfluxDb/data/$selectedTopic/hourly'
+      final url = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetailsInfluxDb/data/$selectedTopic/hourly'
           '?date=$dateString&duration=$durationParam';
 
       print('Fetching hourly data with duration: $selectedDuration');
@@ -536,7 +536,7 @@ class _EnergyDetailsWidgetState extends State<EnergyDetailsWidget> {
     try {
       final response = await _client.get(
         Uri.parse(
-          'https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/current/$selectedTopic',
+          'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/current/$selectedTopic',
         ),
         headers: AppConfig.headers,
       ).timeout(const Duration(seconds: 20));
@@ -573,7 +573,7 @@ class _EnergyDetailsWidgetState extends State<EnergyDetailsWidget> {
     try {
       final chartResponse = await _client.get(
         Uri.parse(
-          'https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/data/$selectedTopic/$selectedPeriod',
+          'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/data/$selectedTopic/$selectedPeriod',
         ),
         headers: AppConfig.headers,
       ).timeout(const Duration(seconds: 20));
@@ -601,7 +601,7 @@ class _EnergyDetailsWidgetState extends State<EnergyDetailsWidget> {
 
       final lastPeriodResponse = await _client.get(
         Uri.parse(
-          'https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/vs/$selectedTopic/$selectedPeriod',
+          'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/vs/$selectedTopic/$selectedPeriod',
         ),
         headers: AppConfig.headers,
       ).timeout(const Duration(seconds: 20));
@@ -633,7 +633,7 @@ class _EnergyDetailsWidgetState extends State<EnergyDetailsWidget> {
     try {
       final response = await _client.get(
         Uri.parse(
-          'https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/total/$selectedTopic',
+          'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/total/$selectedTopic',
         ),
         headers: AppConfig.headers,
       ).timeout(const Duration(seconds: 20));

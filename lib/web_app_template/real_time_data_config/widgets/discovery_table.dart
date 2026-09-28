@@ -399,9 +399,10 @@ class _DeviceRowState extends State<_DeviceRow> {
                               context: context,
                               builder: (_) => _RawQueryDialog(
                                 deviceId: widget.device.deviceId,
-                                measurement: widget.device.tags.isNotEmpty
-                                    ? widget.device.tags.first.measurement
-                                    : widget.device.deviceId,
+                                measurement: widget.device.tags.isNotEmpty &&
+                                        widget.device.tags.first.realMeasurement.isNotEmpty
+                                    ? widget.device.tags.first.realMeasurement
+                                    : '<measurement>',
                               ),
                             );
                           }),

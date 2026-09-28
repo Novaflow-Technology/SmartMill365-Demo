@@ -12,8 +12,8 @@ const _firestoreCache = new Map(); // key: clientId → Firestore instance
 // don't send x-client-id, instead of redirecting them to whichever client is
 // currently set as app_config/active_integration (which is for admin/config use).
 const DEFAULT_INFLUX = {
-  host: "http://sm365db.novaplus.my:8086",
-  token: "ncvgKVDjUEt1V-KmM58cF_XGTfbZXL6x3YTplisqb-_ALQbcAMPd0HIyYnl6QvXlZfNweyl0AvaKhvH4BLzZnA==",
+  host: "",
+  token: "",
   org: "Novaflow",
   bucket: "ENERGY_DEMO",
   measurement: "power_meter",
@@ -24,16 +24,16 @@ const DEFAULT_INFLUX = {
 // header, or the client has no MySQL config in integration_config. Keeps the
 // original single-tenant behaviour working without any config.
 const DEFAULT_MYSQL = {
-  host: "124.217.236.76",
+  host: "",
   port: 3306,
   user: "novaflow",
-  password: "Nov@flow6889",
+  password: "",
   database: "Danapac_Database",
 };
 
 // Shared MySQL password across clients — not stored per-client, applied unless
 // a client explicitly has its own secret saved under integration_config secrets.
-const DEFAULT_MYSQL_PASSWORD = "Nov@flow6889";
+const DEFAULT_MYSQL_PASSWORD = "";
 
 // ── Firestore helpers ─────────────────────────────────────────────────────────
 
@@ -123,6 +123,14 @@ async function getInfluxClient(clientId, req) {
  * Returns the Influx schema (measurement/tag names) for a client, read from
  * integration_config/{clientId}.influx. Falls back to Danapac defaults so
  * existing deployments keep working.
+ *
+ * `measurement` is a single fixed name (e.g. "power_meter") for clients whose
+ * devices all write to one measurement. A client can instead set it to an
+ * empty string on purpose to mean "no single measurement — scan every
+ * measurement in the bucket", for a schema like SmartMill's where each
+ * equipment type is its own measurement. That's only honoured when the field
+ * is present and explicitly empty; a client that never set it at all keeps
+ * defaulting to "power_meter" as before.
  */
 async function getInfluxSchema(clientId) {
   if (!clientId) {
@@ -137,8 +145,9 @@ async function getInfluxSchema(clientId) {
   try {
     const config = await _getClientConfig(clientId);
     const influx = config.influx || {};
+    const measurementSet = Object.prototype.hasOwnProperty.call(influx, "measurement");
     return {
-      measurement:   influx.measurement   || "power_meter",
+      measurement:   measurementSet ? influx.measurement : "power_meter",
       deviceIdTag:   influx.deviceIdTag   || "device_name",
       deviceTypeTag: influx.deviceTypeTag || null,
       deviceTypeVal: influx.deviceTypeVal || null,

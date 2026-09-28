@@ -34,7 +34,7 @@ class KwhPerTonneWidget extends StatefulWidget {
 
 class _KwhPerTonneWidgetState extends State<KwhPerTonneWidget> {
   // ── API ──────────────────────────────────────────────────────────────────
-  static const _baseUrl = 'https://api-ui7wk3sz2q-uc.a.run.app';
+  static const _baseUrl = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api';
 
   // ── Raw data ────────────────────────────────────────────────────────────
   List<FacilityData> _facilities = [];

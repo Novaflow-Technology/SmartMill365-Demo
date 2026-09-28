@@ -293,7 +293,7 @@ class _MaxDemandMonitoringState extends State<MaxDemandMonitoring> {
 
     try {
       final response = await http.get(
-        Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/devices'),
+        Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/devices'),
         headers: AppConfig.headers,
       );
       // A TNB meter may have already been selected (via _fetchTnbMeters, which
@@ -639,7 +639,7 @@ class _MaxDemandMonitoringState extends State<MaxDemandMonitoring> {
     if (AppConfig.clientId.isEmpty) await AppConfig.refresh();
     try {
       final res = await http.get(
-        Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/energyDetailsInfluxDb/devices'),
+        Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetailsInfluxDb/devices'),
         headers: AppConfig.headers,
       );
       if (res.statusCode == 200) {
@@ -730,7 +730,7 @@ class _MaxDemandMonitoringState extends State<MaxDemandMonitoring> {
         debugPrint('[CurrentPower] deviceId="$deviceId" scoped=$scoped '
             '(in influx bucket? ${_influxDeviceIds?.contains(deviceId)}) -> query="$query"');
       }
-      final uri = Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/energyDetailsInfluxDb/power-load/current$query');
+      final uri = Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetailsInfluxDb/power-load/current$query');
       final response = await http.get(uri, headers: AppConfig.headers);
       if (!mounted) return;
       // The selected meter may have changed to an unlinked one while this
@@ -808,16 +808,16 @@ class _MaxDemandMonitoringState extends State<MaxDemandMonitoring> {
       // "no config found" even when one exists for the active client.
       final results = await Future.wait([
         meterCategoryId.isNotEmpty
-            ? http.get(Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/masterBillingConfig/$userUid/$meterCategoryId'), headers: AppConfig.headers)
-            : http.get(Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/masterBillingConfig/$userUid/active'), headers: AppConfig.headers),
-        http.get(Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/masterBillingConfig/$userUid/electricityTariff'), headers: AppConfig.headers),
+            ? http.get(Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/masterBillingConfig/$userUid/$meterCategoryId'), headers: AppConfig.headers)
+            : http.get(Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/masterBillingConfig/$userUid/active'), headers: AppConfig.headers),
+        http.get(Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/masterBillingConfig/$userUid/electricityTariff'), headers: AppConfig.headers),
       ]);
       if (!mounted) return;
       var response = results[0];
       final tariffResponse = results[1];
 
       if (meterCategoryId.isNotEmpty && response.statusCode != 200) {
-        response = await http.get(Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/masterBillingConfig/$userUid/active'), headers: AppConfig.headers);
+        response = await http.get(Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/masterBillingConfig/$userUid/active'), headers: AppConfig.headers);
         if (!mounted) return;
       }
 
@@ -862,7 +862,7 @@ class _MaxDemandMonitoringState extends State<MaxDemandMonitoring> {
         _maxDemandEventsError = null;
       });
 
-      final response = await http.get(Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/max-demand-events?device_id=$_selectedDeviceId'),
+      final response = await http.get(Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/max-demand-events?device_id=$_selectedDeviceId'),
           headers: AppConfig.headers);
       if (!mounted) return;
 
@@ -1026,7 +1026,7 @@ class _MaxDemandMonitoringState extends State<MaxDemandMonitoring> {
       }
 
       final uri = Uri.parse(
-        'https://api-ui7wk3sz2q-uc.a.run.app/energyDetailsInfluxDb/equipment-load-correlation'
+        'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetailsInfluxDb/equipment-load-correlation'
         '?device_id=${allowedIds.join(',')}'
         '&event_date=$eventDate'
         '&event_start=$eventStart'
@@ -1139,7 +1139,7 @@ class _MaxDemandMonitoringState extends State<MaxDemandMonitoring> {
       }
 
       final uri = Uri.parse(
-        'https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/equipment-md-ranking'
+        'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/equipment-md-ranking'
         '?device_id=${queryIds.join(',')}'
         '&event_date=$eventDate'
         '&event_start=$eventStart'
@@ -1273,7 +1273,7 @@ class _MaxDemandMonitoringState extends State<MaxDemandMonitoring> {
         _yearOnYearError = null;
       });
       final response = await http.get(
-          Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/year-on-year-analysis?device_id=$_selectedDeviceId'),
+          Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/year-on-year-analysis?device_id=$_selectedDeviceId'),
           headers: AppConfig.headers);
       print(response.body);
       if (!mounted) return;
@@ -1381,7 +1381,7 @@ class _MaxDemandMonitoringState extends State<MaxDemandMonitoring> {
       // Distribution). Falls back to the backend's own Morning/Afternoon/
       // Evening/Night default when no meter is selected or it has none saved.
       final buckets = _selectedTnbMeter?.dashboardConfig.distributionBuckets ?? const [];
-      final uri = Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/average-power-load/$_selectedDeviceId').replace(
+      final uri = Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/average-power-load/$_selectedDeviceId').replace(
         queryParameters:
             buckets.isNotEmpty ? {'buckets': json.encode(buckets.map((b) => b.toJson()).toList())} : null,
       );
@@ -1421,7 +1421,7 @@ class _MaxDemandMonitoringState extends State<MaxDemandMonitoring> {
         _isLoadingMaxDemand = true;
         _maxDemandError = null;
       });
-      final response = await http.get(Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/max-demand-chart?device_id=$_selectedDeviceId'),
+      final response = await http.get(Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/max-demand-chart?device_id=$_selectedDeviceId'),
           headers: AppConfig.headers);
       if (!mounted) return;
       if (response.statusCode == 200) {
@@ -1457,7 +1457,7 @@ class _MaxDemandMonitoringState extends State<MaxDemandMonitoring> {
         _isLoadingPowerLoad = true;
         _powerLoadError = null;
       });
-      final response = await http.get(Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/power-load-24h/$_selectedDeviceId'),
+      final response = await http.get(Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/power-load-24h/$_selectedDeviceId'),
           headers: AppConfig.headers);
       if (!mounted) return;
       if (response.statusCode == 200) {

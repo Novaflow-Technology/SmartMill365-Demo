@@ -1,0 +1,18 @@
+rules_version = '2';
+
+// SmartMill's Firestore holds exactly one client's data — the isolation
+// boundary is the Firebase project itself (a separate project per client),
+// not per-document rules the way a shared multi-tenant project needs. So the
+// bar here is simply "signed in to this project's own Auth" — no anonymous or
+// public internet access, and no other client's users exist in this project
+// to separate from. Most real reads/writes go through the Cloud Functions API
+// (Admin SDK, not subject to these rules, enforcing x-client-id itself);
+// these rules only cover the small set of features that talk to Firestore
+// directly from the app (device overrides, user profile/roles, etc.).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}

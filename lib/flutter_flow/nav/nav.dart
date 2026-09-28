@@ -1,6 +1,9 @@
 import 'dart:async';
 import '/web_app_template/solar_settlement/solar_settlement_widget.dart';
 import '/web_app_template/solar_settlement/settings/solar_settlement_setting_widget.dart';
+import 'package:smartmachine365/web_app_template/kanban_dashboard/pom_group_command_center_widget.dart';
+import 'package:smartmachine365/web_app_template/pom_command_center/mill_command_center_widget.dart';
+import 'package:smartmachine365/web_app_template/kanban_dashboard_settings/pom_group_command_center_setting_widget.dart';
 
 import 'package:smartmachine365/models/user_scope.dart';
 
@@ -15,7 +18,6 @@ import '../../web_app_template/sankey_energy_flow/sankey_energy_flow.dart';
 import '/flutter_flow/session_storage.dart';
 import 'package:smartmachine365/web_app_template/energy_system_settings/energy_system_settings_widget.dart';
 import 'package:smartmachine365/web_app_template/kanban_dashboard_settings/kanban_dashboard_settings_widget.dart';
-import 'package:smartmachine365/web_app_template/kanban_dashboard_settings/plant_energy_command_center/plant_energy_command_center_setting_widget.dart';
 import 'package:smartmachine365/web_app_template/master_billing_configuration/master_billing_config_widget.dart';
 import 'package:smartmachine365/web_app_template/real_time_data_config/discovery_page.dart';
 import 'package:smartmachine365/web_app_template/real_time_data_config/live_insight_page.dart';
@@ -161,7 +163,7 @@ class AppStateNotifier extends ChangeNotifier {
       }
 
       // Find an admin/superadmin with tariff categories.
-      const base = 'https://api-ic7ypg6ukq-uc.a.run.app';
+      const base = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api';
       final usersRes =
           await http.get(Uri.parse('$base/users/role/all'), headers: {'Content-Type': 'application/json'}).timeout(const Duration(seconds: 15));
       if (usersRes.statusCode != 200) return;
@@ -255,6 +257,12 @@ class AppStateNotifier extends ChangeNotifier {
   Future<void> update(BaseAuthUser newUser) async {
     _forceLoggedOut = false;
     final shouldUpdate = user?.uid == null || newUser.uid == null || user?.uid != newUser.uid;
+    // The first auth event after page load is definitive for this browser:
+    // if Firebase says nobody is signed in, a session cached in localStorage
+    // is stale (e.g. left over from a build pointed at another Firebase
+    // project) and must not keep the app "logged in" — every Firestore call
+    // would then go out unauthenticated and be rejected by the rules.
+    final isFirstEvent = initialUser == null;
     initialUser ??= newUser;
     user = newUser;
 
@@ -271,7 +279,7 @@ class AppStateNotifier extends ChangeNotifier {
     // get logged out the moment tab B clicks "Sign In" on the login page.
     if (shouldUpdate) {
       final isResuming = newUser.uid != null && newUser.uid == uid;
-      final isCrossTabPhantomSignOut = newUser.uid == null && SessionStorage.hasSession();
+      final isCrossTabPhantomSignOut = newUser.uid == null && SessionStorage.hasSession() && !isFirstEvent;
       if (!isResuming && !isCrossTabPhantomSignOut) {
         SessionStorage.clearSession();
         userRole = null;
@@ -308,7 +316,7 @@ class AppStateNotifier extends ChangeNotifier {
 
       // Get role + name/email from Express.js API
       try {
-        final allRes = await http.get(Uri.parse("https://api-ic7ypg6ukq-uc.a.run.app/users"));
+        final allRes = await http.get(Uri.parse("https://us-central1-smartmill365-demo.cloudfunctions.net/api/users"));
         if (allRes.statusCode == 200) {
           final List<dynamic> allUsers = json.decode(allRes.body);
 
@@ -329,7 +337,7 @@ class AppStateNotifier extends ChangeNotifier {
               // Auto-fix UID mismatch
               if (match != null) {
                 await http.put(
-                  Uri.parse("https://api-ic7ypg6ukq-uc.a.run.app/users/fixUid/${match['id']}"),
+                  Uri.parse("https://us-central1-smartmill365-demo.cloudfunctions.net/api/users/fixUid/${match['id']}"),
                   headers: {'Content-Type': 'application/json'},
                   body: json.encode({'uid': uid}),
                 );
@@ -908,19 +916,9 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           name: 'PlantEnergyCommandCenterSetting',
           path: '/PlantEnergyCommandCenterSetting',
           rolesAllowed: ['Super Admin', 'Admin', 'Manager'],
-          builder: (context, params) {
-            // Optional ?plant= scopes the page to one factory (e.g. "Lot 237").
-            final plant = params.getParam('plant', ParamType.String) as String?;
-            // Unique key per factory so navigating between the group and a
-            // factory (same route, different ?plant=) builds fresh State and
-            // the plant scoping never bleeds across them.
-            return MainLayout(
-              child: PlantEnergyCommandCenterSettingWidget(
-                key: ValueKey('pecc-${plant ?? 'group'}'),
-                initialPlantName: plant,
-              ),
-            );
-          },
+          // SmartMill has no energy command centres: this route (and any
+          // link still pointing at it) now opens the POM settings.
+          builder: (context, params) => const MainLayout(child: PomGroupCommandCenterSettingWidget()),
         ),
         FFRoute(
           name: 'MasterBillingConfig',
@@ -1111,18 +1109,31 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           name: 'KanbanDashboard',
           path: '/KanbanDashboard',
           rolesAllowed: ['Viewer', 'Super Admin', 'Admin', 'Manager', 'Engineer', 'Operator'],
-          builder: (context, params) {
-            // Optional ?plant= scopes the view to one factory (e.g. "Lot 237").
-            final plant = params.getParam('plant', ParamType.String) as String?;
-            // Unique key per factory so the group and a factory view (same
-            // route, different ?plant=) don't reuse each other's State/config.
-            return MainLayout(
-              child: KanbanDashboardWidget(
-                key: ValueKey('kanban-${plant ?? 'group'}'),
-                initialPlantName: plant,
-              ),
-            );
-          },
+          // SmartMill has no energy command centres: this route (and any
+          // link still pointing at it) now opens the Group POM Command Center.
+          builder: (context, params) => const MainLayout(child: PomGroupCommandCenterWidget()),
+        ),
+        FFRoute(
+          name: 'PomGroupCommandCenter',
+          path: '/PomGroupCommandCenter',
+          rolesAllowed: ['Viewer', 'Super Admin', 'Admin', 'Manager', 'Engineer', 'Operator'],
+          builder: (context, params) => const MainLayout(child: PomGroupCommandCenterWidget()),
+        ),
+        FFRoute(
+          name: 'PomGroupCommandCenterSetting',
+          path: '/PomGroupCommandCenterSetting',
+          rolesAllowed: ['Super Admin', 'Admin'],
+          builder: (context, params) => const MainLayout(child: PomGroupCommandCenterSettingWidget()),
+        ),
+        FFRoute(
+          name: 'MillCommandCenter',
+          path: '/millCommandCenter',
+          rolesAllowed: ['Viewer', 'Super Admin', 'Admin', 'Manager', 'Engineer', 'Operator'],
+          // Dynamic, not per-mill: any mill added in the Group setting is
+          // reachable here immediately by its id, with nothing to wire up.
+          builder: (context, params) => MainLayout(
+            child: MillCommandCenterWidget(millId: params.getParam<String>('mill', ParamType.String) ?? ''),
+          ),
         ),
         FFRoute(
           name: 'TnbE3BillSimulator',

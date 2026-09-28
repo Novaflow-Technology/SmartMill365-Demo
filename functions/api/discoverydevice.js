@@ -8,6 +8,23 @@ function safeDuration(val, fallback) {
   return /^-?\d+[smhdw]$/.test(String(val)) ? String(val) : fallback;
 }
 
+// A client with a single fixed measurement (the common case) filters to it;
+// a client set up to scan every measurement (schema.measurement === "")
+// omits the filter entirely instead of matching a measurement name that
+// doesn't exist.
+function measurementFilter(schema) {
+  return schema.measurement ? `|> filter(fn: (r) => r["_measurement"] == "${sanitize(schema.measurement)}")` : "";
+}
+
+// Real fallback for "Plant" when neither an Influx site_id tag nor a MySQL
+// site table exists (SmartMill has neither) — device ids follow
+// "<SITE>_POM_<serial>", so the site is decoded straight from the id itself
+// rather than left blank or guessed. Same convention /pom/devices already
+// relies on for the same reason.
+function deriveSiteFromId(id) {
+  return String(id || "").split("_")[0] || "";
+}
+
 function executeQuery(queryApi, fluxQuery) {
   return new Promise((resolve, reject) => {
     const results = [];
@@ -40,7 +57,7 @@ router.get("/devices", async (req, res) => {
     const query = `
       from(bucket: "${bucket}")
         |> range(start: ${start})
-        |> filter(fn: (r) => r["_measurement"] == "${schema.measurement}")
+        ${measurementFilter(schema)}
         ${deviceFilter(schema, null)}
         |> map(fn: (r) => ({_value: r["${tag}"]}))
         |> group()
@@ -66,7 +83,7 @@ router.get("/meta", async (req, res) => {
     const query = `
       from(bucket: "${bucket}")
         |> range(start: ${start})
-        |> filter(fn: (r) => r["_measurement"] == "${schema.measurement}")
+        ${measurementFilter(schema)}
         ${deviceFilter(schema, null)}
         |> map(fn: (r) => ({
             _value:      r["${tag}"],
@@ -83,7 +100,7 @@ router.get("/meta", async (req, res) => {
       .map((r) => ({
         device_id:   r.device_id   || "",
         device_name: r.device_name || r.device_id || "",
-        site_id:     r.site_id     || "",
+        site_id:     r.site_id     || deriveSiteFromId(r.device_id),
         device_type: schema.deviceTypeVal || "",
       }));
     res.json(meta);
@@ -101,12 +118,18 @@ router.get("/fields/:deviceId", async (req, res) => {
 
   try {
     const { queryApi, bucket, schema } = await getClient(req);
+    // Grouped by measurement AND field, not field alone — a schema scanning
+    // every measurement (schema.measurement === "") can have the same field
+    // name under several measurements for one device (SmartMill's sterilizer
+    // devices report "stp1" under pressure, bar and temperature readings
+    // alike), and grouping by field only would silently collapse those into
+    // one, dropping the rest.
     const query = `
       from(bucket: "${bucket}")
         |> range(start: ${start})
-        |> filter(fn: (r) => r["_measurement"] == "${schema.measurement}")
+        ${measurementFilter(schema)}
         ${deviceFilter(schema, deviceId)}
-        |> group(columns: ["_field"])
+        |> group(columns: ["_measurement", "_field"])
         |> last()
         |> group()
     `;
@@ -114,9 +137,11 @@ router.get("/fields/:deviceId", async (req, res) => {
     const seen   = new Set();
     const fields = [];
     for (const r of data) {
-      if (!r._field || seen.has(r._field)) continue;
-      seen.add(r._field);
-      fields.push({ field: r._field, measurement: schema.measurement });
+      if (!r._field) continue;
+      const key = `${r._measurement}|${r._field}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      fields.push({ field: r._field, measurement: r._measurement || schema.measurement });
     }
     res.json({ device_id: deviceId, fields });
   } catch (err) {
@@ -141,13 +166,18 @@ router.get("/realtime/:deviceId", async (req, res) => {
       fieldFilter = `|> filter(fn: (r) => ${conditions})`;
     }
 
+    // Grouped by measurement AND field — a schema scanning every measurement
+    // can have the same field name under several measurements for one
+    // device (SmartMill's "stp1" exists under pressure, bar and temperature
+    // readings alike). Grouping by field alone would pick just one of those
+    // per last(), silently discarding the others as if they were duplicates.
     const query = `
       from(bucket: "${bucket}")
         |> range(start: -15m)
-        |> filter(fn: (r) => r["_measurement"] == "${schema.measurement}")
+        ${measurementFilter(schema)}
         ${deviceFilter(schema, deviceId)}
         ${fieldFilter}
-        |> group(columns: ["_field", "${schema.deviceIdTag}"])
+        |> group(columns: ["_field", "_measurement", "${schema.deviceIdTag}"])
         |> last()
         |> group()
     `;
@@ -169,8 +199,12 @@ router.get("/realtime/:deviceId", async (req, res) => {
 
 // ── GET /discoveryDevice/history/:deviceId ─────────────────────────────────────
 router.get("/history/:deviceId", async (req, res) => {
-  const deviceId = sanitize(req.params.deviceId);
-  const field    = sanitize(req.query.field);
+  const deviceId    = sanitize(req.params.deviceId);
+  const field       = sanitize(req.query.field);
+  // Optional — disambiguates a field name that exists under more than one
+  // measurement for the same device (only relevant when schema.measurement
+  // is "" and the caller got this from /fields, which now reports it).
+  const measurement = sanitize(req.query.measurement);
   const start    = safeDuration(req.query.start,  "");
   const window   = safeDuration(req.query.window, "");
   const timezone = parseInt(req.query.timezone, 10) || 0;
@@ -186,11 +220,14 @@ router.get("/history/:deviceId", async (req, res) => {
       const d = new Date(new Date(iso).getTime() + tzOffsetMs);
       return `${String(d.getUTCHours()).padStart(2,"0")}:${String(d.getUTCMinutes()).padStart(2,"0")}`;
     };
+    const measFilter = measurement
+      ? `|> filter(fn: (r) => r["_measurement"] == "${measurement}")`
+      : measurementFilter(schema);
 
     const query = `
       from(bucket: "${bucket}")
         |> range(start: ${start})
-        |> filter(fn: (r) => r["_measurement"] == "${schema.measurement}")
+        ${measFilter}
         ${deviceFilter(schema, deviceId)}
         |> filter(fn: (r) => r["_field"] == "${field}")
         |> aggregateWindow(every: ${window}, fn: last, createEmpty: false)
@@ -201,7 +238,7 @@ router.get("/history/:deviceId", async (req, res) => {
     res.json({
       device_id: deviceId,
       field,
-      measurement: schema.measurement,
+      measurement: measurement || schema.measurement,
       start,
       window,
       timezone: `UTC+${timezone / 60}`,
@@ -229,7 +266,7 @@ router.post("/syncToFacility", async (req, res) => {
     const query = `
       from(bucket: "${bucket}")
         |> range(start: -30d)
-        |> filter(fn: (r) => r["_measurement"] == "${schema.measurement}")
+        ${measurementFilter(schema)}
         ${deviceFilter(schema, null)}
         |> map(fn: (r) => ({
             _value:      r["${tag}"],
@@ -244,7 +281,7 @@ router.post("/syncToFacility", async (req, res) => {
     const devices = data.filter((r) => r.device_id).map((r) => ({
       device_id:   r.device_id   || "",
       device_name: r.device_name || r.device_id || "",
-      site_id:     r.site_id     || "",
+      site_id:     r.site_id     || deriveSiteFromId(r.device_id),
       client_id:   clientId,
     }));
 
@@ -297,7 +334,7 @@ router.get("/enriched", async (req, res) => {
     }
     const metaRows = await executeQuery(queryApi, metaQuery);
     const influxDevices = [...new Set(metaRows.map((r) => r._value || r[tag]).filter(Boolean))]
-      .map((id) => ({ device_id: id, device_name: id, site_id: "" }));
+      .map((id) => ({ device_id: id, device_name: id, site_id: deriveSiteFromId(id) }));
 
     // ── Step 2: Attempt MySQL enrichment (safe — never throws) ────────────────
     let mysqlMap = {}; // keyed by device_id
@@ -350,7 +387,7 @@ router.get("/enriched", async (req, res) => {
         line_name:    m.line_name    || "",
         zone_id:      m.zone_id      || "",
         zone_name:    m.zone_name    || "",
-        site_name:    m.site_name    || "",
+        site_name:    m.site_name    || d.site_id,
         parent_id:    m.parent_id    || "",
         parent_name:  m.parent_name  || "",
       };
@@ -370,13 +407,13 @@ router.get("/test/connection", async (req, res) => {
     const query = `
       from(bucket: "${bucket}")
         |> range(start: -1h)
-        |> filter(fn: (r) => r["_measurement"] == "${schema.measurement}")
+        ${measurementFilter(schema)}
         |> limit(n: 1)
     `;
     const data = await executeQuery(queryApi, query);
     res.json({
       status:      "Connected",
-      message:     `InfluxDB connected — measurement: ${schema.measurement}`,
+      message:     schema.measurement ? `InfluxDB connected — measurement: ${schema.measurement}` : "InfluxDB connected — scanning every measurement in the bucket",
       bucket,
       measurement: schema.measurement,
       sampleData:  data,

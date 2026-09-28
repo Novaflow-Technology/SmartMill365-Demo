@@ -5,9 +5,9 @@ const router = express.Router();
 
 // Create MySQL pool
 const pool = mysql.createPool({
-  host: "124.217.236.76",
+  host: "",
   user: "novaflow",
-  password: "Nov@flow6889",
+  password: "",
   database: "Intech_Database",
 });
 

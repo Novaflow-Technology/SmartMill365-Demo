@@ -5,7 +5,7 @@ import 'package:smartmachine365/services/app_config.dart';
 import 'package:smartmachine365/web_app_template/kanban_dashboard/models/response.dart';
 
 class KanbanCellServices {
-  static const String _dataUrl = 'https://api-ui7wk3sz2q-uc.a.run.app';
+  static const String _dataUrl = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api';
   static const String _allMachines = 'MSB,CM1,CM2,TD7,TD8,TD9,TD9_SUB,TD10,MOTAN,C2,C7,C8,C9,C10,CA';
   static const List<String> _allMachineIds = [
     'MSB',

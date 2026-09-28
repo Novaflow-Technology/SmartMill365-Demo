@@ -93,7 +93,7 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
   // ── API ───────────────────────────────────────────────────────────────────
   Future<void> fetchGroups() async {
     try {
-      final res = await http.get(Uri.parse('https://api-ic7ypg6ukq-uc.a.run.app/groups'));
+      final res = await http.get(Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/groups'));
       if (res.statusCode == 200) {
         final data = json.decode(res.body) as List<dynamic>;
         setState(() {
@@ -106,7 +106,7 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
 
   Future<void> fetchFactories() async {
     try {
-      final res = await http.get(Uri.parse('https://api-ic7ypg6ukq-uc.a.run.app/factory'));
+      final res = await http.get(Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/factory'));
       if (res.statusCode == 200) {
         final data = json.decode(res.body) as List<dynamic>;
         setState(() {
@@ -195,8 +195,8 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
 
     // Energy system settings (contract capacity, TOU, overload risk, etc.)
     await copyJson(
-      'https://api-ic7ypg6ukq-uc.a.run.app/energy-settings/$sourceUid',
-      'https://api-ic7ypg6ukq-uc.a.run.app/energy-settings/$newUid',
+      'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energy-settings/$sourceUid',
+      'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energy-settings/$newUid',
     );
 
     // Tariff categories and master billing config are shared across every
@@ -205,14 +205,14 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
 
     // Kanban dashboard settings (templates + active settings).
     await copyJson(
-      'https://api-ic7ypg6ukq-uc.a.run.app/kanban-settings/$sourceUid',
-      'https://api-ic7ypg6ukq-uc.a.run.app/kanban-settings/$newUid',
+      'https://us-central1-smartmill365-demo.cloudfunctions.net/api/kanban-settings/$sourceUid',
+      'https://us-central1-smartmill365-demo.cloudfunctions.net/api/kanban-settings/$newUid',
     );
 
     // Master facility settings — the GET returns a list, so copy each one.
     try {
       final r = await http.get(Uri.parse(
-          'https://api-ic7ypg6ukq-uc.a.run.app/facilities/$sourceUid'));
+          'https://us-central1-smartmill365-demo.cloudfunctions.net/api/facilities/$sourceUid'));
       if (r.statusCode == 200 && r.body.isNotEmpty) {
         final decoded = jsonDecode(r.body);
         final List<dynamic> items = decoded is List ? decoded : [];
@@ -220,7 +220,7 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
           if (item is! Map) continue;
           await http.post(
             Uri.parse(
-                'https://api-ic7ypg6ukq-uc.a.run.app/facilities/$newUid'),
+                'https://us-central1-smartmill365-demo.cloudfunctions.net/api/facilities/$newUid'),
             headers: {'Content-Type': 'application/json'},
             body: jsonEncode(item),
           );
@@ -235,7 +235,7 @@ class _AddCustomerDialogState extends State<AddCustomerDialog> {
   Future<void> addCustomer(String name, String phone, String email,
       List<dynamic> groupIds, String role, String uid, String factoryId) async {
     final res = await http.post(
-      Uri.parse('https://api-ic7ypg6ukq-uc.a.run.app/users/add'),
+      Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/users/add'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'name': name, 'phone': phone, 'email': email,
           'groupIds': groupIds, 'role': role, 'uid': uid, 'factory_id': factoryId}),

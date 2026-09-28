@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-const _apiBase = 'https://api-ic7ypg6ukq-uc.a.run.app';
+const _apiBase = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api';
 
 class UserProvider with ChangeNotifier {
   User? currentUser;

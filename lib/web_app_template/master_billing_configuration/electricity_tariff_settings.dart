@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_widgets.dart';
 
-const String _kApiBaseUrl = 'https://api-ic7ypg6ukq-uc.a.run.app';
+const String _kApiBaseUrl = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api';
 
 class ElectricityTariffSettings extends StatefulWidget {
   final String uid;

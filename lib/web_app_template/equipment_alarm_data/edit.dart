@@ -54,7 +54,7 @@ class _EditDataDialogState extends State<EditDataDialog> {
 
   Future<void> fetchWorkOrder() async {
     try {
-      const String apiUrl = "https://api-ic7ypg6ukq-uc.a.run.app/workOrders";
+      const String apiUrl = "https://us-central1-smartmill365-demo.cloudfunctions.net/api/workOrders";
 
       // Send GET request
       final response = await http.get(Uri.parse(apiUrl));
@@ -169,7 +169,7 @@ class _EditDataDialogState extends State<EditDataDialog> {
               } else {
                 try {
                   final String apiUrl =
-                      "https://api-ic7ypg6ukq-uc.a.run.app/equipmentAlarmData/update/${widget.id}";
+                      "https://us-central1-smartmill365-demo.cloudfunctions.net/api/equipmentAlarmData/update/${widget.id}";
 
                   // Prepare JSON data
                   final Map<String, dynamic> requestData = {

@@ -403,7 +403,7 @@ class _KwhAddDataTabState extends State<KwhAddDataTab> {
     final date = _date;
     setState(() { _fetchingLiveReading = true; _liveReadingError = null; });
     try {
-      final uri = Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/reading/$meterId?date=${_isoDate(date)}&hour=$shiftHour');
+      final uri = Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/reading/$meterId?date=${_isoDate(date)}&hour=$shiftHour');
       final res = await http.get(uri, headers: AppConfig.headers).timeout(const Duration(seconds: 10));
       if (!mounted) return;
       // Bail if the form moved on (machine/date/shift changed, or an entry landed) while the request was in flight.
@@ -454,7 +454,7 @@ class _KwhAddDataTabState extends State<KwhAddDataTab> {
     final date = _date;
     setState(() { _fetchingMeterNow = true; _meterNowError = null; });
     try {
-      final uri = Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/reading/$meterId?date=${_isoDate(date)}');
+      final uri = Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/reading/$meterId?date=${_isoDate(date)}');
       final res = await http.get(uri, headers: AppConfig.headers).timeout(const Duration(seconds: 10));
       if (!mounted) return;
       // Bail if the form moved on (machine/date changed, or an entry landed) while the request was in flight.

@@ -14,9 +14,9 @@ async function poolFor(req) {
 }
 
 const pool = mysql.createPool({
-  host: "124.217.236.76",
+  host: "",
   user: "novaflow",
-  password: "Nov@flow6889",
+  password: "",
   database: "Danapac_Database",
 }).promise();
 

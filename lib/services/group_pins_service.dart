@@ -20,8 +20,8 @@ class GroupPin {
 class GroupPinsService {
   GroupPinsService._();
 
-  static const _peccBase = 'https://api-ui7wk3sz2q-uc.a.run.app/plant-energy-command-center';
-  static const _settingsUrl = 'https://api-ui7wk3sz2q-uc.a.run.app/kanban-settings';
+  static const _peccBase = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api/plant-energy-command-center';
+  static const _settingsUrl = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api/kanban-settings';
 
   static List<GroupPin>? _cache;
   static DateTime? _cacheTime;

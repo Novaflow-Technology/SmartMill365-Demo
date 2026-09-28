@@ -21,6 +21,7 @@ class DiscoveryState {
   final bool showHidden;
   final bool isRefreshing;
   final bool isRestoring;
+  final bool isApprovingAll;
   final Set<String> reconnectingIds;
   final List<String> deviceTypes;
   final bool isFromCache;
@@ -34,6 +35,7 @@ class DiscoveryState {
     this.showHidden = false,
     this.isRefreshing = false,
     this.isRestoring = false,
+    this.isApprovingAll = false,
     this.reconnectingIds = const {},
     this.deviceTypes = const [],
     this.isFromCache = false,
@@ -48,6 +50,7 @@ class DiscoveryState {
     bool? showHidden,
     bool? isRefreshing,
     bool? isRestoring,
+    bool? isApprovingAll,
     Set<String>? reconnectingIds,
     List<String>? deviceTypes,
     bool? isFromCache,
@@ -61,6 +64,7 @@ class DiscoveryState {
         showHidden: showHidden ?? this.showHidden,
         isRefreshing: isRefreshing ?? this.isRefreshing,
         isRestoring: isRestoring ?? this.isRestoring,
+        isApprovingAll: isApprovingAll ?? this.isApprovingAll,
         reconnectingIds: reconnectingIds ?? this.reconnectingIds,
         deviceTypes: deviceTypes ?? this.deviceTypes,
         isFromCache: isFromCache ?? this.isFromCache,
@@ -72,6 +76,15 @@ class DiscoveryCubit extends Cubit<DiscoveryState> {
   final InfluxDiscoveryService _influx;
   final DeviceConfigService _config;
   Timer? _autoTimer;
+
+  /// A saved override only wins when it's actually non-empty. A device
+  /// approved before a field like site/plant had any real value would have
+  /// written that empty string into Firestore — with a plain `??`, that
+  /// empty override then permanently masks a freshly (and now correctly)
+  /// derived value on every subsequent load, since `?? ` only falls through
+  /// on null, not on ''.
+  static String _pick(String? override, String fallback) =>
+      (override != null && override.isNotEmpty) ? override : fallback;
 
   DiscoveryCubit({InfluxDiscoveryService? influx, DeviceConfigService? config})
       : _influx = influx ?? InfluxDiscoveryService(),
@@ -211,6 +224,15 @@ class DiscoveryCubit extends Cubit<DiscoveryState> {
       final discovered = results[0] as List<DiscoveredDevice>;
       final overrides = results[1] as Map<String, Map<String, dynamic>>;
 
+      // An empty result and a request that actually failed look the same to
+      // the caller unless the service says otherwise — surface it as a real
+      // error instead of a silent "no devices", so this isn't mistaken for
+      // "SmartMill genuinely has none".
+      if (discovered.isEmpty && _influx.lastError != null) {
+        emit(state.copyWith(status: DiscoveryStatus.error, error: _influx.lastError));
+        return;
+      }
+
       // Build a map of live devices from InfluxDB
       final liveIds = {for (final d in discovered) d.deviceId: d};
 
@@ -228,19 +250,19 @@ class DiscoveryCubit extends Cubit<DiscoveryState> {
           displayName: ov['displayName'] as String? ?? d.displayName,
           deviceType:  (ov['deviceType'] as String?)?.isNotEmpty == true ? ov['deviceType'] as String : d.deviceType,
           tags:        d.tags,
-          plantId:     ov['plantId']   as String? ?? d.plantId,
-          zoneId:      ov['zoneId']    as String? ?? d.zoneId,
-          plantName:   ov['plantName'] as String? ?? d.plantName,
-          zoneName:    ov['zoneName']  as String? ?? d.zoneName,
+          plantId:     _pick(ov['plantId'] as String?, d.plantId),
+          zoneId:      _pick(ov['zoneId'] as String?, d.zoneId),
+          plantName:   _pick(ov['plantName'] as String?, d.plantName),
+          zoneName:    _pick(ov['zoneName'] as String?, d.zoneName),
           isApproved:  ov['isApproved'] as bool? ?? d.isApproved,
           isHidden:    false,
-          siteId:      ov['siteId']      as String? ?? d.siteId,
-          machineId:   ov['machineId']   as String? ?? d.machineId,
-          machineName: ov['machineName'] as String? ?? d.machineName,
-          lineId:      ov['lineId']      as String? ?? d.lineId,
-          lineName:    ov['lineName']    as String? ?? d.lineName,
-          parentId:    ov['parentId']    as String? ?? d.parentId,
-          parentName:  ov['parentName']  as String? ?? d.parentName,
+          siteId:      _pick(ov['siteId'] as String?, d.siteId),
+          machineId:   _pick(ov['machineId'] as String?, d.machineId),
+          machineName: _pick(ov['machineName'] as String?, d.machineName),
+          lineId:      _pick(ov['lineId'] as String?, d.lineId),
+          lineName:    _pick(ov['lineName'] as String?, d.lineName),
+          parentId:    _pick(ov['parentId'] as String?, d.parentId),
+          parentName:  _pick(ov['parentName'] as String?, d.parentName),
         ));
       }
 
@@ -274,6 +296,24 @@ class DiscoveryCubit extends Cubit<DiscoveryState> {
     }
   }
 
+  /// Approves every currently discovered, non-hidden device in one go —
+  /// Super Admin only (gated in the page, not here, since a cubit has no
+  /// notion of the signed-in role). Live Data Insight only streams approved
+  /// devices, so this is what unblocks it without clicking Edit → Active →
+  /// Save on each row one at a time.
+  Future<void> approveAll() async {
+    emit(state.copyWith(isApprovingAll: true));
+    try {
+      final toApprove = state.devices.where((d) => !d.isApproved).toList();
+      for (final d in toApprove) {
+        await _config.approveDevice(d.deviceId, d);
+      }
+      await discoverAll();
+    } finally {
+      emit(state.copyWith(isApprovingAll: false));
+    }
+  }
+
   /// Lightweight re-poll — keeps existing table visible, shows subtle refresh indicator.
   Future<void> refreshNow() async {
     emit(state.copyWith(isRefreshing: true));
@@ -292,19 +332,19 @@ class DiscoveryCubit extends Cubit<DiscoveryState> {
           deviceId: d.deviceId, deviceName: d.deviceName,
           displayName: ov['displayName'] as String? ?? d.displayName,
           deviceType: (ov['deviceType'] as String?)?.isNotEmpty == true ? ov['deviceType'] as String : d.deviceType,
-          tags: d.tags, plantId: ov['plantId'] as String? ?? d.plantId,
-          zoneId: ov['zoneId'] as String? ?? d.zoneId,
-          plantName: ov['plantName'] as String? ?? d.plantName,
-          zoneName: ov['zoneName'] as String? ?? d.zoneName,
+          tags: d.tags, plantId: _pick(ov['plantId'] as String?, d.plantId),
+          zoneId: _pick(ov['zoneId'] as String?, d.zoneId),
+          plantName: _pick(ov['plantName'] as String?, d.plantName),
+          zoneName: _pick(ov['zoneName'] as String?, d.zoneName),
           isApproved: ov['isApproved'] as bool? ?? d.isApproved,
           isHidden: false,
-          siteId:      ov['siteId']      as String? ?? d.siteId,
-          machineId:   ov['machineId']   as String? ?? d.machineId,
-          machineName: ov['machineName'] as String? ?? d.machineName,
-          lineId:      ov['lineId']      as String? ?? d.lineId,
-          lineName:    ov['lineName']    as String? ?? d.lineName,
-          parentId:    ov['parentId']    as String? ?? d.parentId,
-          parentName:  ov['parentName']  as String? ?? d.parentName,
+          siteId:      _pick(ov['siteId'] as String?, d.siteId),
+          machineId:   _pick(ov['machineId'] as String?, d.machineId),
+          machineName: _pick(ov['machineName'] as String?, d.machineName),
+          lineId:      _pick(ov['lineId'] as String?, d.lineId),
+          lineName:    _pick(ov['lineName'] as String?, d.lineName),
+          parentId:    _pick(ov['parentId'] as String?, d.parentId),
+          parentName:  _pick(ov['parentName'] as String?, d.parentName),
         );
       }).whereType<DiscoveredDevice>().toList();
       emit(state.copyWith(
@@ -450,15 +490,19 @@ class DiscoveryCubit extends Cubit<DiscoveryState> {
   }
 
   /// Updates tagName/unit for a specific field on a device (in-memory only, no Firestore).
+  /// [realMeasurement] disambiguates which one, since the same field name
+  /// (e.g. "stp1") can exist under several real measurements for one
+  /// device — matching by field name alone would rename every one of them
+  /// at once instead of just the row that was actually edited.
   void updateTagMeta(String deviceId, String fieldName,
-      {required String tagName, required String unit}) {
+      {required String tagName, required String unit, String realMeasurement = ''}) {
     final updated = state.devices.map((d) {
       if (d.deviceId != deviceId) return d;
       final tags = d.tags.map((t) {
-        if (t.fieldName != fieldName) return t;
+        if (t.fieldName != fieldName || t.realMeasurement != realMeasurement) return t;
         return InfluxTag(
           measurement: t.measurement, fieldName: t.fieldName,
-          tagName: tagName, unit: unit,
+          tagName: tagName, unit: unit, realMeasurement: t.realMeasurement,
           lastValue: t.lastValue, lastUpdate: t.lastUpdate,
         );
       }).toList();

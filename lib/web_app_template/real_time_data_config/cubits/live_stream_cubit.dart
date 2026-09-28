@@ -98,7 +98,7 @@ class LiveStreamCubit extends Cubit<LiveStreamState> {
 
   Future<void> reconnectTag(InfluxTag tag) async {
     if (isClosed) return;
-    final key = '${tag.measurement}.${tag.fieldName}';
+    final key = '${tag.measurement}.${tag.realMeasurement}.${tag.fieldName}';
     final reconnecting = Set<String>.from(state.reconnectingKeys)..add(key);
     emit(state.copyWith(reconnectingKeys: reconnecting));
     try {

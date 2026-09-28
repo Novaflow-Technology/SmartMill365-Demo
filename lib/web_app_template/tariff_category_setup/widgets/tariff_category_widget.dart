@@ -10,7 +10,7 @@ import 'package:smartmachine365/services/app_config.dart';
 import '/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 
-const String _baseUrl = 'https://api-ui7wk3sz2q-uc.a.run.app';
+const String _baseUrl = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api';
 
 const List<TableColumn> _tariffColumns = [
   TableColumn('Voltage Level', 'voltageLevel', 100, sortable: true),

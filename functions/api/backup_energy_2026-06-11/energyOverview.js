@@ -6,15 +6,15 @@ const mysql = require("mysql2");
 const { InfluxDB } = require("@influxdata/influxdb-client");
 
 const pool = mysql.createPool({
-  host: "124.217.236.76",
+  host: "",
   user: "novaflow",
-  password: "Nov@flow6889",
+  password: "",
   database: "Danapac_Database",
 });
 
 const influxClient = new InfluxDB({
-  url: "http://sm365db.novaplus.my:8086",
-  token: "ncvgKVDjUEt1V-KmM58cF_XGTfbZXL6x3YTplisqb-_ALQbcAMPd0HIyYnl6QvXlZfNweyl0AvaKhvH4BLzZnA==",
+  url: "",
+  token: "",
 });
 const influxQueryApi = influxClient.getQueryApi("Novaflow");
 

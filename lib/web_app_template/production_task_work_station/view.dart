@@ -80,7 +80,7 @@ class _WordOrderViewState extends State<ProductionTaskWorkStationView> {
   final queryController = TextEditingController();
   final machineController = TextEditingController();
 
-  static const String _baseUrl = 'https://api-ic7ypg6ukq-uc.a.run.app'
+  static const String _baseUrl = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api'
   ;
 
   List<Map<String, dynamic>> productionTaskTicketData = [];

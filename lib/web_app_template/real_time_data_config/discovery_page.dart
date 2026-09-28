@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import '/flutter_flow/rbac.dart';
+import '/flutter_flow/flutter_flow_util.dart';
 import 'cubits/discovery_cubit.dart';
 import 'widgets/discovery_table.dart';
 
@@ -103,6 +105,24 @@ class _DiscoveryPageContentState extends State<_DiscoveryPageContent> {
                   ),
                 ),
                 const SizedBox(width: 8),
+                // Approve All — activates every discovered device for Live
+                // Data Insight in one go. Super Admin only: this is a bulk
+                // action across the whole device list, not a single row edit.
+                if (AppRoles.normalizeRole(AppStateNotifier.instance.userRole ?? '') == AppRoles.superAdmin) ...[
+                  BlocBuilder<DiscoveryCubit, DiscoveryState>(
+                    buildWhen: (p, n) => p.isApprovingAll != n.isApprovingAll || p.devices != n.devices,
+                    builder: (context, state) {
+                      final pending = state.devices.where((d) => !d.isApproved).length;
+                      return _TBtn(
+                        pending == 0 ? 'All Active' : 'Activate All ($pending)',
+                        Icons.bolt, const Color(0xFF39FF14),
+                        pending == 0 ? () {} : () => cubit.approveAll(),
+                        isLoading: state.isApprovingAll,
+                      );
+                    },
+                  ),
+                  const SizedBox(width: 8),
+                ],
                 // Show Hidden toggle
                 BlocBuilder<DiscoveryCubit, DiscoveryState>(
                   buildWhen: (p, n) => p.showHidden != n.showHidden,

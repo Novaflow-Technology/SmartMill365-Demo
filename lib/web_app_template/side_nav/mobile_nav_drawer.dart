@@ -8,7 +8,7 @@ import '/flutter_flow/session_storage.dart';
 import '/flutter_flow/user_presence.dart';
 import 'package:expandable/expandable.dart';
 import 'home_page_dialog.dart';
-import 'package:smartmachine365/services/group_pins_service.dart';
+import '/web_app_template/pom_command_center/pom_config.dart';
 
 /// Mobile-only slide-in navigation drawer.
 /// Matches the WareTrack-style dark drawer shown in the design reference.
@@ -24,78 +24,6 @@ class _MobileNavDrawerState extends State<MobileNavDrawer> {
   // Accent stays consistent (purple, like the WareTrack logo) across themes.
   static const _accent     = Color(0xFF6C63FF);
   static const _accentLight= Color(0xFF8B83FF);
-
-  // A pin on the group map is a lot — see side_nav_widget.dart for the full
-  // reasoning; this mirrors it for the mobile drawer, including one
-  // expandable group per pin (View + Settings nested inside).
-  List<GroupPin> _groupPins = const [];
-  final Map<String, ExpandableController> _pinExpandControllers = {};
-  ExpandableController _pinController(String pinName) =>
-      _pinExpandControllers.putIfAbsent(pinName, () => ExpandableController());
-
-  @override
-  void initState() {
-    super.initState();
-    _loadGroupPins();
-  }
-
-  Future<void> _loadGroupPins() async {
-    final pins = await GroupPinsService.fetchPins();
-    if (mounted) setState(() => _groupPins = pins);
-  }
-
-  // ── Generic nested expandable group — used both for a pin's own View +
-  // Settings, and for the two groupings ("Plant Energy Command Center",
-  // "Production Line Energy Command Center") that hold several of those. ──
-  Widget _navGroup(String label, String controllerKey, List<Widget> children) {
-    return ExpandableNotifier(
-      controller: _pinController(controllerKey),
-      child: ExpandablePanel(
-        header: Container(
-          margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 1),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          child: Row(
-            children: [
-              Container(
-                width: 5,
-                height: 5,
-                margin: const EdgeInsets.only(right: 10),
-                decoration: BoxDecoration(color: _accent.withOpacity(0.6), shape: BoxShape.circle),
-              ),
-              Expanded(
-                child: Text(
-                  label,
-                  style: GoogleFonts.poppins(fontSize: 12.5, fontWeight: FontWeight.w400, color: _textSecondary),
-                ),
-              ),
-            ],
-          ),
-        ),
-        collapsed: const SizedBox.shrink(),
-        expanded: Padding(
-          padding: const EdgeInsets.only(left: 16, bottom: 2),
-          child: Column(mainAxisSize: MainAxisSize.min, children: children),
-        ),
-        theme: const ExpandableThemeData(
-          tapHeaderToExpand: true,
-          tapBodyToExpand: false,
-          tapBodyToCollapse: false,
-          hasIcon: true,
-          expandIcon: Icons.chevron_right_rounded,
-          collapseIcon: Icons.keyboard_arrow_down_rounded,
-          iconSize: 16,
-        ),
-      ),
-    );
-  }
-
-  // A pin/lot/block leaf — its own View + Settings, nested together.
-  Widget _pinGroup(String label, String controllerKey, String plantValue) {
-    return _navGroup(label, controllerKey, [
-      _subItem('View', 'KanbanDashboard', module: AppRoles.kModuleKanbanDashboard, queryParameters: {'plant': plantValue}),
-      _subItem('Settings', 'PlantEnergyCommandCenterSetting', module: AppRoles.kModuleKanbanDashboardSettings, queryParameters: {'plant': plantValue}),
-    ]);
-  }
 
   bool get _isLight => Theme.of(context).brightness == Brightness.light;
   FlutterFlowTheme get _ffTheme => FlutterFlowTheme.of(context);
@@ -136,9 +64,6 @@ class _MobileNavDrawerState extends State<MobileNavDrawer> {
     _ctrl6.dispose();
     _ctrl7.dispose();
     _ctrlKwh.dispose();
-    for (final c in _pinExpandControllers.values) {
-      c.dispose();
-    }
     super.dispose();
   }
 
@@ -534,26 +459,17 @@ class _MobileNavDrawerState extends State<MobileNavDrawer> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Kanban Dashboard: the group view, plus one expandable
-                    // group per pin (View + Settings nested) — a pin is a lot.
+                    // Kanban Dashboard: SmartMill's Group POM Command Center.
                     _section(
                       label: 'Kanban Dashboard',
                       icon: Icons.view_kanban,
                       controller: _ctrlKwh, // reuse a spare controller
                       modules: [AppRoles.kModuleKanbanDashboard, AppRoles.kModuleKanbanDashboardSettings],
                       children: [
-                        _subItem('Group Energy Command Center',   'KanbanDashboard', module: AppRoles.kModuleKanbanDashboard),
-                        _navGroup('Plant Energy Command Center', 'group:plant', [
-                          for (final pin in _groupPins)
-                            _pinGroup(pin.displayName, 'plant:${pin.displayName}', pin.displayName),
-                        ]),
-                        _navGroup('Production Line Energy Command Center', 'group:productionLine', [
-                          for (final block in const ['Lot 237 Block A', 'Lot 237 Block B', 'Lot 237 Block C'])
-                            _pinGroup(block, 'block:$block', block),
-                          for (final pin in _groupPins)
-                            if (!GroupPinsService.isSameLot(pin.displayName, 'Lot 237'))
-                              _pinGroup(pin.displayName, 'productionLine:${pin.displayName}', pin.displayName),
-                        ]),
+                        _subItem('Group POM Command Center', 'PomGroupCommandCenter'),
+                        for (final m in PomCalc(PomConfigStore.live).activeMills())
+                          _subItem('${PomCalc.short((m['name'] ?? '').toString())} Command Center', 'MillCommandCenter',
+                              queryParameters: {'mill': m['id'].toString()}),
                       ],
                     ),
 
@@ -731,10 +647,7 @@ class _MobileNavDrawerState extends State<MobileNavDrawer> {
                       children: [
                         _subItem('Master Facility',       'MasterFacilitySetting',  module: AppRoles.kModuleMasterFacilitySetting),
                         _subItem('Kanban Dashboard Setting','KanbanDashboardSettings',module: AppRoles.kModuleKanbanDashboardSettings),
-                        _subItem('Group Energy Command Center','PlantEnergyCommandCenterSetting',module: AppRoles.kModuleKanbanDashboardSettings),
-                        // Every other centre's settings — Plant and
-                        // Production Line alike — now live grouped with
-                        // their own view, under "Kanban Dashboard" above.
+                        _subItem('Group POM Command Center', 'PomGroupCommandCenterSetting'),
                         _subItem('Plant',                 'GfsPlant',               module: AppRoles.kModuleGfsPlant),
                         _subItem('Production Block',      'GfsProductionArea',      module: AppRoles.kModuleGfsProductionArea),
                         _subItem('Equipment',             'GfsEquipment',           module: AppRoles.kModuleGfsEquipment),

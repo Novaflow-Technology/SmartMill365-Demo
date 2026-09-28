@@ -6,7 +6,7 @@ const mysql = require("mysql2");
 const pool = mysql.createPool({
   host: "219.92.5.163",
   user: "novaflow",
-  password: "Nov@flow6889",
+  password: "",
   database: "Intech_Database",
 });
 

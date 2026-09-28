@@ -774,7 +774,7 @@ class _EnergyComparisonWidgetState extends State<EnergyComparisonWidget> {
   Future<List<Map<String, dynamic>>> _fetchHourlyComparisonSeries(
       String deviceId) async {
     final base =
-        'https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/data/$deviceId/hourly';
+        'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/data/$deviceId/hourly';
     final url = hourlyFilterDate != null
         ? '$base?date=${_ymd(hourlyFilterDate!)}'
         : '$base?window=rolling24h';
@@ -856,7 +856,7 @@ class _EnergyComparisonWidgetState extends State<EnergyComparisonWidget> {
       // When the user picks a date in the card's filter, request that
       // calendar day's 0..23 breakdown instead via ?date=.
       final base =
-          'https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/data/$selectedTopic/hourly';
+          'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/data/$selectedTopic/hourly';
       final url = hourlyFilterDate != null
           ? '$base?date=${_ymd(hourlyFilterDate!)}'
           : '$base?window=rolling24h';
@@ -901,7 +901,7 @@ class _EnergyComparisonWidgetState extends State<EnergyComparisonWidget> {
       // ?month=YYYY-MM pins the chart to that calendar month's per-day
       // breakdown (the card's month filter); omitted = backend default window.
       final base =
-          'https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/data/$selectedTopic/daily';
+          'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/data/$selectedTopic/daily';
       final url = dailyFilterMonth != null
           ? '$base?month=${_ym(dailyFilterMonth!)}'
           : base;
@@ -945,7 +945,7 @@ class _EnergyComparisonWidgetState extends State<EnergyComparisonWidget> {
     try {
       final chartResponse = await http.get(
           Uri.parse(
-              'https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/data/$selectedTopic/monthly'),
+              'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/data/$selectedTopic/monthly'),
           headers: AppConfig.headers);
       if (!mounted) return;
       if (chartResponse.statusCode == 200) {
@@ -968,7 +968,7 @@ class _EnergyComparisonWidgetState extends State<EnergyComparisonWidget> {
 
         setState(() => chartData3 = processedData);
         print(
-            'Successfully fetched monthly data for topic: https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/data/$selectedTopic/monthly');
+            'Successfully fetched monthly data for topic: https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/data/$selectedTopic/monthly');
       } else {
         setState(() => chartData3 = []);
       }
@@ -986,7 +986,7 @@ class _EnergyComparisonWidgetState extends State<EnergyComparisonWidget> {
     try {
       final chartResponse = await http.get(
           Uri.parse(
-              'https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/data/$selectedTopic/yearly'),
+              'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/data/$selectedTopic/yearly'),
           headers: AppConfig.headers);
       if (!mounted) return;
       if (chartResponse.statusCode == 200) {
@@ -1008,7 +1008,7 @@ class _EnergyComparisonWidgetState extends State<EnergyComparisonWidget> {
 
         setState(() => chartData4 = processedData);
         print(
-            'Successfully fetched yearly data for topic: https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/data/$selectedTopic/yearly');
+            'Successfully fetched yearly data for topic: https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/data/$selectedTopic/yearly');
       } else {
         setState(() => chartData4 = []);
       }

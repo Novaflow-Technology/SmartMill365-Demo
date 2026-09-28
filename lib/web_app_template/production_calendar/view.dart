@@ -58,7 +58,7 @@ class _ProductionCalendarViewState extends State<ProductionCalendarView> {
     try {
       // Define API URL
       String apiUrl =
-          "https://api-ic7ypg6ukq-uc.a.run.app/productionAreas/equipments/workOrders";
+          "https://us-central1-smartmill365-demo.cloudfunctions.net/api/productionAreas/equipments/workOrders";
 
       // Send GET request
       final response = await http.get(Uri.parse(apiUrl));

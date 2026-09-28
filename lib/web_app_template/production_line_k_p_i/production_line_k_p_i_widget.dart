@@ -36,7 +36,7 @@ class _ProductionLineKPIWidgetState extends State<ProductionLineKPIWidget> {
   String lastUpdateTime = '';
 
   // API Base URL - Update this to your server URL
-  final String baseUrl = 'https://api-ic7ypg6ukq-uc.a.run.app/productionLineKpi';
+  final String baseUrl = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api/productionLineKpi';
 
   // Filter states
   String? selectedShift;

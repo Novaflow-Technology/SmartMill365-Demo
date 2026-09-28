@@ -12,7 +12,7 @@ class TnbMeterService {
   // Same host the Max Demand Monitoring dashboard itself queries — reused
   // here so the "Live Preview" column in the TNB meter's widget-channel-
   // mapping section reflects exactly what the dashboard will show.
-  static const String _energyDetailsBase = 'https://api-ui7wk3sz2q-uc.a.run.app/energyDetails';
+  static const String _energyDetailsBase = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails';
 
   /// Live preview for the 24-Hour Power Load Trend widget: point count over
   /// the last 24h for [deviceId]. Returns null on any failure (device not

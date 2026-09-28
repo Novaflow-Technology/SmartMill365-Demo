@@ -6,7 +6,7 @@ import 'package:smartmachine365/services/app_config.dart';
 import '../models/sankey_setting_data.dart';
 
 class SankeySettingService {
-  static const String _base = 'https://api-ic7ypg6ukq-uc.a.run.app';
+  static const String _base = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api';
   static String get _uid => AppStateNotifier.instance.uid ?? '';
 
   static List<String>? _deviceCache;
@@ -73,9 +73,9 @@ class SankeySettingService {
 
   // Uses the energy-data server (same host as influxdb_service) for device list
   static const String _devicesUrl =
-      'https://api-ui7wk3sz2q-uc.a.run.app/energyDetailsInfluxDb/devices';
+      'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetailsInfluxDb/devices';
   static const String _facilitiesUrl =
-      'https://api-ic7ypg6ukq-uc.a.run.app/facilities';
+      'https://us-central1-smartmill365-demo.cloudfunctions.net/api/facilities';
 
   static Future<List<String>> getDeviceList({bool forceRefresh = false}) async {
     if (_deviceCache != null && !forceRefresh) return _deviceCache!;

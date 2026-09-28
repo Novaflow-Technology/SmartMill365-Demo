@@ -187,7 +187,7 @@ class _EnergyOverviewWidgetState extends State<EnergyOverviewWidget> {
           'fetchOverviewData: clientId=${AppConfig.clientId}, headers=${AppConfig.headers}');
       final res = await http.get(
           Uri.parse(
-              'https://api-ui7wk3sz2q-uc.a.run.app/energyOverview/data/$selectedPeriod'),
+              'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyOverview/data/$selectedPeriod'),
           headers: AppConfig.headers);
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
@@ -249,7 +249,7 @@ class _EnergyOverviewWidgetState extends State<EnergyOverviewWidget> {
           'fetchPowerData: clientId=${AppConfig.clientId}, headers=${AppConfig.headers}');
       final res = await http.get(
           Uri.parse(
-              'https://api-ui7wk3sz2q-uc.a.run.app/energyDetailsInfluxDb/timeseries/$selectedPeriod'
+              'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetailsInfluxDb/timeseries/$selectedPeriod'
               '?machine_ids=${deviceIds.join(',')}&fields=PeakDemand'),
           headers: AppConfig.headers);
 
@@ -322,7 +322,7 @@ class _EnergyOverviewWidgetState extends State<EnergyOverviewWidget> {
           'fetchTopics: clientId=${AppConfig.clientId}, headers=${AppConfig.headers}');
       final res = await http.get(
           Uri.parse(
-              'https://api-ui7wk3sz2q-uc.a.run.app/energyDetailsInfluxDb/devices'),
+              'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetailsInfluxDb/devices'),
           headers: AppConfig.headers);
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);

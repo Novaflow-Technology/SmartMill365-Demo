@@ -750,8 +750,8 @@ Map<String, List<SankeyNode>> _buildNodesByTier(
   }
 
   // ── Live Data Fetching ───────────────────────────────────────────────────
-  static const String _influxBase = 'https://api-ic7ypg6ukq-uc.a.run.app/energyDetailsInfluxDb/realtime';
-  static const String _energyBase = 'https://api-ic7ypg6ukq-uc.a.run.app/energyDetails/total';
+  static const String _influxBase = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetailsInfluxDb/realtime';
+  static const String _energyBase = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/total';
 
   Future<void> refreshDeviceValues(List<String> deviceIds) async {
     final s = _loaded;

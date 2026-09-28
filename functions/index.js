@@ -54,6 +54,7 @@ const productionTaskFunctions = require("./api/productionTask");
 const energySystemSettingFunction = require("./api/energySystemSettingFunction");
 const masterBillingConfigFunction = require("./api/masterBillingConfigFunction");
 const kanbanDashboardSettingFunction = require("./api/kanbanDashboardSettingFunction");
+const pomDataFunction = require("./api/pomDataFunction"); // Group POM Command Center — real device catalog + live Influx values
 const facilityFunctions = require("./api/facilityFunctions");
 const tariffCategorySetupFunction = require("./api/tariffCategorySetupFunction");
 const productionLineFunctions = require("./api/productionLineFunctions");
@@ -121,6 +122,7 @@ app.use("/equipmentDetails", equipmentDetailsFunctions);
 app.use("/equipmentAlarmData", equipmentAlarmDataFunctions);
 app.use("/energyDataLogger", energyDataLoggerFunctions);
 app.use("/kanban-settings", kanbanDashboardSettingFunction);
+app.use("/pom", pomDataFunction); // Group POM Command Center — real device catalog + live Influx values
 app.use("/productionTask", productionTaskFunctions); // Handles production task-related operation
 app.use("/productionOutputLog", productionOutputLogFunctions);
 app.use("/discoveryDevice", discoveryDeviceFunctions);

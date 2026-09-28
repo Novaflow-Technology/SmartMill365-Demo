@@ -5,9 +5,9 @@ const router = express.Router();
 const mysql = require("mysql2");
 
 const pool = mysql.createPool({
-  host: "124.217.236.76",
+  host: "",
   user: "novaflow",
-  password: "Nov@flow6889",
+  password: "",
   database: "Danapac_Database",
 });
 
@@ -151,7 +151,7 @@ module.exports = router;
 // const pool = mysql.createPool({
 //   host: "219.92.5.163",
 //   user: "novaflow",
-//   password: "Nov@flow6889",
+//   password: "",
 //   database: "Danapac_Database",
 //   waitForConnections: true,
 //   connectionLimit: 10,

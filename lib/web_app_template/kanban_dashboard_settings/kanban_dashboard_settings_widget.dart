@@ -50,7 +50,7 @@ class _KanbanDashboardSettingsWidgetState extends State<KanbanDashboardSettingsW
   String? _activeTemplateName;
   String? _lastAppliedAt;
 
-  static const String _baseUrl = 'https://api-ui7wk3sz2q-uc.a.run.app/kanban-settings';
+  static const String _baseUrl = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api/kanban-settings';
 
   @override
   void initState() {

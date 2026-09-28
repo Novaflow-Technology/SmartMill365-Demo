@@ -77,7 +77,7 @@ class _KanbanDashboardWidgetState extends State<KanbanDashboardWidget> {
   /// Loaded once per PECC load; used to override saved widget labels.
   final Map<String, String> _facilityDisplayNames = {};
 
-  static const String _settingsUrl = 'https://api-ui7wk3sz2q-uc.a.run.app/kanban-settings';
+  static const String _settingsUrl = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api/kanban-settings';
 
   // ── Helpers ───────────────────────────────────────────────────────
   String? _safeString(dynamic v) {
@@ -288,7 +288,7 @@ class _KanbanDashboardWidgetState extends State<KanbanDashboardWidget> {
   Future<bool> _fetchPeccConfig(String uid, {required int loadVersion}) async {
     if (uid.isEmpty) return false;
     try {
-      const peccBase = 'https://api-ui7wk3sz2q-uc.a.run.app/plant-energy-command-center';
+      const peccBase = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api/plant-energy-command-center';
       // Scope to this factory's config when the view is a per-factory command
       // center (e.g. "Lot 237"); empty → the group config.
       final plant = widget.initialPlantName?.trim() ?? '';
@@ -1098,7 +1098,7 @@ class _KanbanDashboardWidgetState extends State<KanbanDashboardWidget> {
     payload['branding'] = mutate(branding);
     if (payload['sections'] is! List) payload['sections'] = <dynamic>[];
     try {
-      const peccBase = 'https://api-ui7wk3sz2q-uc.a.run.app/plant-energy-command-center';
+      const peccBase = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api/plant-energy-command-center';
       final res = await http
           .post(
             Uri.parse('$peccBase/$uid'),

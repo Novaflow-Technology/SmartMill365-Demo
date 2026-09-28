@@ -12,10 +12,10 @@ import '/flutter_flow/session_storage.dart';
 import 'package:flutter/material.dart';
 import 'home_page_dialog.dart';
 import 'side_nav_model.dart';
+import '/web_app_template/pom_command_center/pom_config.dart';
 export 'side_nav_model.dart';
 import 'package:expandable/expandable.dart';
 import 'package:smartmachine365/web_app_template/notifications/notification_bell_widget.dart';
-import 'package:smartmachine365/services/group_pins_service.dart';
 
 class SideNavWidget extends StatefulWidget {
   const SideNavWidget({
@@ -44,20 +44,6 @@ class _SideNavWidgetState extends State<SideNavWidget> {
   String? _hoveredItem;
   static final Map<String, String> _resolvedPathsCache = {};
 
-  // A pin on the group map is a lot: every one gets its own nav entry here
-  // (both the view and its settings), instead of a fixed handful of plants
-  // hardcoded into the app. Starts empty so the menu renders immediately;
-  // entries for real pins fill in once this loads.
-  List<GroupPin> _groupPins = const [];
-
-  // One expandable group per pin (View + Settings nested inside), so both
-  // live in the same place instead of two unrelated sidebar sections.
-  // Controllers are created lazily per pin name and kept for the widget's
-  // life so a pin's expanded/collapsed state survives rebuilds.
-  final Map<String, ExpandableController> _pinExpandControllers = {};
-  ExpandableController _pinController(String pinName) =>
-      _pinExpandControllers.putIfAbsent(pinName, () => ExpandableController());
-
   static const _kFadeExtra = <String, dynamic>{
     kTransitionInfoKey: TransitionInfo(
       hasTransition: true,
@@ -84,12 +70,8 @@ class _SideNavWidgetState extends State<SideNavWidget> {
     _model = createModel(context, () => SideNavModel());
     AppStateNotifier.instance.addListener(_onAppStateChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) => safeSetState(() {}));
-    _loadGroupPins();
-  }
-
-  Future<void> _loadGroupPins() async {
-    final pins = await GroupPinsService.fetchPins();
-    if (mounted) safeSetState(() => _groupPins = pins);
+    // The per-mill Command Center entries come from the published POM config.
+    PomConfigStore.ensureLoaded().then((_) => safeSetState(() {}));
   }
 
   void _onAppStateChanged() {
@@ -99,9 +81,6 @@ class _SideNavWidgetState extends State<SideNavWidget> {
   @override
   void dispose() {
     AppStateNotifier.instance.removeListener(_onAppStateChanged);
-    for (final c in _pinExpandControllers.values) {
-      c.dispose();
-    }
     _model.maybeDispose();
     super.dispose();
   }
@@ -610,13 +589,9 @@ class _SideNavWidgetState extends State<SideNavWidget> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Kanban Dashboard: the group view, plus one
-                            // expandable group per pin on the group map — a pin
-                            // is a lot, so its View and its Settings live
-                            // together here, not split across two unrelated
-                            // parts of the menu. Gated on either permission so
-                            // it still shows for a settings-only account; each
-                            // nested link still gates itself individually.
+                            // Kanban Dashboard: SmartMill's Group POM Command
+                            // Center. Gated on either permission so it still
+                            // shows for a settings-only account.
                             _section(
                               context,
                               label: 'Kanban Dashboard',
@@ -627,95 +602,13 @@ class _SideNavWidgetState extends State<SideNavWidget> {
                                 AppRoles.kModuleKanbanDashboardSettings,
                               ],
                               children: [
-                                _navItem(context, 'Group Energy Command Center', 'KanbanDashboard',
-                                    module: AppRoles.kModuleKanbanDashboard),
-
-                                // Plant Energy Command Center — one group per
-                                // pin (a pin is a lot), View + Settings
-                                // nested together.
-                                _subSection(
-                                  context,
-                                  label: 'Plant Energy Command Center',
-                                  controller: _pinController('group:plant'),
-                                  modules: const [
-                                    AppRoles.kModuleKanbanDashboard,
-                                    AppRoles.kModuleKanbanDashboardSettings,
-                                  ],
-                                  children: [
-                                    for (final pin in _groupPins)
-                                      _subSection(
-                                        context,
-                                        label: pin.displayName,
-                                        controller: _pinController('plant:${pin.displayName}'),
-                                        modules: const [
-                                          AppRoles.kModuleKanbanDashboard,
-                                          AppRoles.kModuleKanbanDashboardSettings,
-                                        ],
-                                        children: [
-                                          _navItem(context, 'View', 'KanbanDashboard',
-                                              module: AppRoles.kModuleKanbanDashboard,
-                                              queryParameters: {'plant': pin.displayName}),
-                                          _navItem(context, 'Settings', 'PlantEnergyCommandCenterSetting',
-                                              module: AppRoles.kModuleKanbanDashboardSettings,
-                                              queryParameters: {'plant': pin.displayName}),
-                                        ],
-                                      ),
-                                  ],
-                                ),
-
-                                // Production Line Energy Command Center — Lot
-                                // 237's three blocks (not pins of their own)
-                                // plus every other pin repeated here, since a
-                                // lot with no blocks IS its own production
-                                // line.
-                                _subSection(
-                                  context,
-                                  label: 'Production Line Energy Command Center',
-                                  controller: _pinController('group:productionLine'),
-                                  modules: const [
-                                    AppRoles.kModuleKanbanDashboard,
-                                    AppRoles.kModuleKanbanDashboardSettings,
-                                  ],
-                                  children: [
-                                    for (final block in const ['Lot 237 Block A', 'Lot 237 Block B', 'Lot 237 Block C'])
-                                      _subSection(
-                                        context,
-                                        label: block,
-                                        controller: _pinController('block:$block'),
-                                        modules: const [
-                                          AppRoles.kModuleKanbanDashboard,
-                                          AppRoles.kModuleKanbanDashboardSettings,
-                                        ],
-                                        children: [
-                                          _navItem(context, 'View', 'KanbanDashboard',
-                                              module: AppRoles.kModuleKanbanDashboard,
-                                              queryParameters: {'plant': block}),
-                                          _navItem(context, 'Settings', 'PlantEnergyCommandCenterSetting',
-                                              module: AppRoles.kModuleKanbanDashboardSettings,
-                                              queryParameters: {'plant': block}),
-                                        ],
-                                      ),
-                                    for (final pin in _groupPins)
-                                      if (!GroupPinsService.isSameLot(pin.displayName, 'Lot 237'))
-                                        _subSection(
-                                          context,
-                                          label: pin.displayName,
-                                          controller: _pinController('productionLine:${pin.displayName}'),
-                                          modules: const [
-                                            AppRoles.kModuleKanbanDashboard,
-                                            AppRoles.kModuleKanbanDashboardSettings,
-                                          ],
-                                          children: [
-                                            _navItem(context, 'View', 'KanbanDashboard',
-                                                module: AppRoles.kModuleKanbanDashboard,
-                                                queryParameters: {'plant': pin.displayName}),
-                                            _navItem(context, 'Settings', 'PlantEnergyCommandCenterSetting',
-                                                module: AppRoles.kModuleKanbanDashboardSettings,
-                                                queryParameters: {'plant': pin.displayName}),
-                                          ],
-                                        ),
-                                  ],
-                                ),
+                                _navItem(context, 'Group POM Command Center', 'PomGroupCommandCenter'),
+                                // One entry per mill in the Group setting — add
+                                // a mill there and its Command Center appears
+                                // here, with nothing to wire up per mill.
+                                for (final m in PomCalc(PomConfigStore.live).activeMills())
+                                  _navItem(context, '${PomCalc.short((m['name'] ?? '').toString())} Command Center', 'MillCommandCenter',
+                                      queryParameters: {'mill': m['id'].toString()}),
                               ],
                             ),
 
@@ -935,15 +828,7 @@ class _SideNavWidgetState extends State<SideNavWidget> {
                                   children: [
                                     _navItem(context, 'Kanban Dashboard Setting', 'KanbanDashboardSettings',
                                         module: AppRoles.kModuleKanbanDashboardSettings),
-                                    _navItem(context, 'Group Energy Command Center', 'PlantEnergyCommandCenterSetting',
-                                        module: AppRoles.kModuleKanbanDashboardSettings),
-                                    // Every other centre's settings — Plant
-                                    // and Production Line alike — now live
-                                    // grouped with their own view, under the
-                                    // "Kanban Dashboard" section above — a
-                                    // pin is a lot, so its View and Settings
-                                    // belong together, not split across two
-                                    // menus.
+                                    _navItem(context, 'Group POM Command Center', 'PomGroupCommandCenterSetting'),
                                   ],
                                 ),
                                 _subSection(

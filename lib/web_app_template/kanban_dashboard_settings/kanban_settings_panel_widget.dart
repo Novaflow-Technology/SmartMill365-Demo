@@ -250,7 +250,7 @@ class _KanbanSettingsPanelState extends State<KanbanSettingsPanelWidget> {
     try {
       final res = await http
           .get(
-            Uri.parse('https://api-ui7wk3sz2q-uc.a.run.app/plant-energy-command-center/$uid'),
+            Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/plant-energy-command-center/$uid'),
             headers: AppConfig.headers,
           )
           .timeout(const Duration(seconds: 10));
@@ -378,7 +378,7 @@ class _KanbanSettingsPanelState extends State<KanbanSettingsPanelWidget> {
       };
 
   // ── API calls ─────────────────────────────────────────────────────────────
-  static const _base = 'https://api-ui7wk3sz2q-uc.a.run.app/kanban-settings';
+  static const _base = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api/kanban-settings';
 
   Future<void> _saveTemplate() async {
     final uid = AppStateNotifier.instance.uid ?? '';

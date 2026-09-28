@@ -7,7 +7,7 @@
 // const dbConfig = {
 //   host: "219.92.5.163",
 //   user: "novaflow",
-//   password: "Nov@flow6889",
+//   password: "",
 //   database: "Danapac_Database",
 // };
 

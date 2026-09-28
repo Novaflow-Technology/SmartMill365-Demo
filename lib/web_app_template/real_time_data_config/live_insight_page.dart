@@ -29,6 +29,11 @@ class _LiveInsightContentState extends State<_LiveInsightContent> {
   LiveStreamCubit? _streamCubit;
   final _searchCtrl = TextEditingController();
   String _searchQuery = '';
+  // '' = every measurement. Narrows the table to one real Influx measurement
+  // when a device has several — the same field name (e.g. "stp1") can exist
+  // under more than one, and this is the filter layer to tell them apart
+  // instead of scrolling past what looks like duplicate rows.
+  String _measurementFilter = '';
   bool _autoMode = false;
   Timer? _countdownTimer;
   int _secondsLeft = 60;
@@ -54,6 +59,7 @@ class _LiveInsightContentState extends State<_LiveInsightContent> {
     setState(() {
       _selected = d;
       _streamCubit = LiveStreamCubit()..startStreaming(d.tags);
+      _measurementFilter = ''; // a new device has its own set of measurements
     });
   }
 
@@ -329,30 +335,42 @@ class _LiveInsightContentState extends State<_LiveInsightContent> {
 
           const SizedBox(height: 10),
 
-          // ── Search bar ───────────────────────────────────────────────────
+          // ── Search bar + Measurement filter ─────────────────────────────
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: SizedBox(
-              height: 34,
-              child: TextField(
-                controller: _searchCtrl,
-                style: GoogleFonts.poppins(color: Colors.white, fontSize: 12),
-                decoration: InputDecoration(
-                  hintText: 'Search by display name, tag name or field…',
-                  hintStyle: GoogleFonts.poppins(color: Colors.white24, fontSize: 12),
-                  prefixIcon: const Icon(Icons.search, color: Colors.white38, size: 16),
-                  contentPadding: EdgeInsets.zero,
-                  filled: true, fillColor: const Color(0xFF010C20),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: const Color(0xFF00D4FF).withOpacity(0.2))),
-                  enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-                      borderSide: BorderSide(color: const Color(0xFF00D4FF).withOpacity(0.2))),
-                  focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
-                      borderSide: const BorderSide(color: Color(0xFF00D4FF))),
+            child: Row(children: [
+              Expanded(
+                child: SizedBox(
+                  height: 34,
+                  child: TextField(
+                    controller: _searchCtrl,
+                    style: GoogleFonts.poppins(color: Colors.white, fontSize: 12),
+                    decoration: InputDecoration(
+                      hintText: 'Search by display name, tag name or field…',
+                      hintStyle: GoogleFonts.poppins(color: Colors.white24, fontSize: 12),
+                      prefixIcon: const Icon(Icons.search, color: Colors.white38, size: 16),
+                      contentPadding: EdgeInsets.zero,
+                      filled: true, fillColor: const Color(0xFF010C20),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: const Color(0xFF00D4FF).withOpacity(0.2))),
+                      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide(color: const Color(0xFF00D4FF).withOpacity(0.2))),
+                      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8),
+                          borderSide: const BorderSide(color: Color(0xFF00D4FF))),
+                    ),
+                    onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
+                  ),
                 ),
-                onChanged: (v) => setState(() => _searchQuery = v.toLowerCase()),
               ),
-            ),
+              if (_selected != null) ...[
+                const SizedBox(width: 10),
+                _MeasurementFilter(
+                  device: _selected!,
+                  value: _measurementFilter,
+                  onChanged: (v) => setState(() => _measurementFilter = v),
+                ),
+              ],
+            ]),
           ),
 
           const SizedBox(height: 8),
@@ -366,7 +384,8 @@ class _LiveInsightContentState extends State<_LiveInsightContent> {
             ))
           else
             Expanded(child: _StreamTable(
-                device: _selected!, cubit: _streamCubit!, searchQuery: _searchQuery)),
+                device: _selected!, cubit: _streamCubit!, searchQuery: _searchQuery,
+                measurementFilter: _measurementFilter)),
         ],
       ),
     );
@@ -375,12 +394,54 @@ class _LiveInsightContentState extends State<_LiveInsightContent> {
 
 // ── Stream Table ──────────────────────────────────────────────────────────────
 
+/// Dropdown of the distinct real measurements this device's tags come from —
+/// e.g. PSTR_bar / PSTR_psi / PSTR_temp for a sterilizer — so the table can
+/// be narrowed to one at a time. Hidden when a device only has one (or none
+/// reported), since there's nothing to disambiguate.
+class _MeasurementFilter extends StatelessWidget {
+  final DiscoveredDevice device;
+  final String value;
+  final ValueChanged<String> onChanged;
+  const _MeasurementFilter({required this.device, required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final measurements = device.tags.map((t) => t.realMeasurement).where((m) => m.isNotEmpty).toSet().toList()..sort();
+    if (measurements.length < 2) return const SizedBox.shrink();
+    return Container(
+      height: 34,
+      padding: const EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        color: const Color(0xFF010C20),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFF00D4FF).withOpacity(0.2)),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: value.isEmpty ? '' : value,
+          isDense: true,
+          dropdownColor: const Color(0xFF010C20),
+          style: GoogleFonts.poppins(color: Colors.white, fontSize: 12),
+          icon: const Icon(Icons.filter_alt_outlined, color: Colors.white38, size: 16),
+          items: [
+            DropdownMenuItem(value: '', child: Text('All measurements', style: GoogleFonts.poppins(color: Colors.white54, fontSize: 12))),
+            for (final m in measurements) DropdownMenuItem(value: m, child: Text(m, style: GoogleFonts.poppins(fontSize: 12))),
+          ],
+          onChanged: (v) => onChanged(v ?? ''),
+        ),
+      ),
+    );
+  }
+}
+
 class _StreamTable extends StatefulWidget {
   final DiscoveredDevice device;
   final LiveStreamCubit cubit;
   final String searchQuery;
+  final String measurementFilter;
   const _StreamTable(
-      {required this.device, required this.cubit, required this.searchQuery});
+      {required this.device, required this.cubit, required this.searchQuery,
+      this.measurementFilter = ''});
 
   @override
   State<_StreamTable> createState() => _StreamTableState();
@@ -389,36 +450,43 @@ class _StreamTable extends StatefulWidget {
 class _StreamTableState extends State<_StreamTable> {
   int _page = 0;
   int _perPage = 10;
-  // fieldName → {tagNameCtrl, unitCtrl}
+  // tag key ("<realMeasurement>|<fieldName>") → {tagNameCtrl, unitCtrl}.
+  // Keyed on the pair, not fieldName alone — the same field name can exist
+  // under several real measurements for one device, and keying on field
+  // name alone would make editing one row edit all of them at once.
   final Map<String, Map<String, TextEditingController>> _editControllers = {};
   final Set<String> _editingFields = {};
 
+  String _keyOf(InfluxTag tag) => '${tag.realMeasurement}|${tag.fieldName}';
+
   void _startEdit(InfluxTag tag) {
-    _editControllers[tag.fieldName] = {
+    _editControllers[_keyOf(tag)] = {
       'name': TextEditingController(text: tag.tagName.isNotEmpty ? tag.tagName : tag.fieldName),
       'unit': TextEditingController(text: tag.unit),
     };
-    setState(() => _editingFields.add(tag.fieldName));
+    setState(() => _editingFields.add(_keyOf(tag)));
   }
 
-  void _cancelEdit(String fieldName) {
-    _editControllers[fieldName]?['name']?.dispose();
-    _editControllers[fieldName]?['unit']?.dispose();
-    _editControllers.remove(fieldName);
-    setState(() => _editingFields.remove(fieldName));
+  void _cancelEdit(InfluxTag tag) {
+    final key = _keyOf(tag);
+    _editControllers[key]?['name']?.dispose();
+    _editControllers[key]?['unit']?.dispose();
+    _editControllers.remove(key);
+    setState(() => _editingFields.remove(key));
   }
 
-  void _saveEdit(BuildContext context, String fieldName) {
-    final ctrls = _editControllers[fieldName];
+  void _saveEdit(BuildContext context, InfluxTag tag) {
+    final ctrls = _editControllers[_keyOf(tag)];
     if (ctrls == null) return;
     final newName = ctrls['name']!.text.trim();
     final newUnit = ctrls['unit']!.text.trim();
     context.read<DiscoveryCubit>().updateTagMeta(
-      widget.device.deviceId, fieldName,
-      tagName: newName.isNotEmpty ? newName : fieldName,
+      widget.device.deviceId, tag.fieldName,
+      tagName: newName.isNotEmpty ? newName : tag.fieldName,
       unit: newUnit,
+      realMeasurement: tag.realMeasurement,
     );
-    _cancelEdit(fieldName);
+    _cancelEdit(tag);
   }
 
   @override
@@ -435,11 +503,14 @@ class _StreamTableState extends State<_StreamTable> {
     return BlocBuilder<LiveStreamCubit, LiveStreamState>(
       bloc: widget.cubit,
       builder: (context, state) {
-        final allTags = widget.searchQuery.isEmpty
-            ? widget.device.tags
-            : widget.device.tags.where((t) =>
-                t.tagName.toLowerCase().contains(widget.searchQuery) ||
-                t.fieldName.toLowerCase().contains(widget.searchQuery)).toList();
+        final allTags = widget.device.tags.where((t) {
+          final matchesSearch = widget.searchQuery.isEmpty ||
+              t.tagName.toLowerCase().contains(widget.searchQuery) ||
+              t.fieldName.toLowerCase().contains(widget.searchQuery);
+          final matchesMeasurement = widget.measurementFilter.isEmpty ||
+              t.realMeasurement == widget.measurementFilter;
+          return matchesSearch && matchesMeasurement;
+        }).toList();
 
         final totalPages = allTags.isEmpty ? 1 : (allTags.length / _perPage).ceil();
         if (_page >= totalPages) _page = totalPages - 1;
@@ -453,6 +524,7 @@ class _StreamTableState extends State<_StreamTable> {
               color: const Color(0xFF00D4FF).withOpacity(0.06),
               child: Row(children: [
                 const _TH('No.', flex: 1),
+                const _TH('Site ID', flex: 3),
                 const _TH('Tag Name', flex: 3),
                 const _TH('Channel (field)', flex: 3),
                 const _TH('Measurement', flex: 2),
@@ -486,15 +558,15 @@ class _StreamTableState extends State<_StreamTable> {
                 itemBuilder: (context, i) {
                   final globalIndex = _page * _perPage + i;
                   final tag = pageTags[i];
-                  final key = '${tag.measurement}.${tag.fieldName}';
+                  final key = '${tag.measurement}.${tag.realMeasurement}.${tag.fieldName}';
                   final value = state.values[key];
                   final isStale = state.isStale(key);
                   final updateStr = state.lastUpdate != null
                       ? state.lastUpdate!.toLocal().toString().substring(11, 19)
                       : '—';
 
-                  final isEditing = _editingFields.contains(tag.fieldName);
-                  final ctrls = _editControllers[tag.fieldName];
+                  final isEditing = _editingFields.contains(_keyOf(tag));
+                  final ctrls = _editControllers[_keyOf(tag)];
 
                   return Container(
                     padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 9),
@@ -509,6 +581,11 @@ class _StreamTableState extends State<_StreamTable> {
                       // No.
                       Expanded(flex: 1, child: Text('${globalIndex + 1}',
                           style: GoogleFonts.poppins(color: Colors.white24, fontSize: 12))),
+                      // Site ID — the Influx `id` tag (full device id, e.g.
+                      // SAMYSK_POM_240004), matching the id → _measurement →
+                      // _field structure in InfluxDB's own explorer.
+                      Expanded(flex: 3, child: Text(widget.device.deviceId,
+                          style: GoogleFonts.poppins(color: Colors.white54, fontSize: 11))),
                       // Tag Name (editable)
                       Expanded(flex: 3, child: isEditing
                           ? _EditField(ctrl: ctrls!['name']!, hint: 'Tag name')
@@ -517,8 +594,9 @@ class _StreamTableState extends State<_StreamTable> {
                       // Channel (field) — always read-only
                       Expanded(flex: 3, child: Text(tag.fieldName,
                           style: GoogleFonts.poppins(color: Colors.white38, fontSize: 11))),
-                      // Measurement
-                      Expanded(flex: 2, child: Text(tag.measurement,
+                      // Measurement — the real Influx measurement (e.g. "PSTR_bar"),
+                      // not tag.measurement, which is actually this row's device id.
+                      Expanded(flex: 2, child: Text(tag.realMeasurement.isEmpty ? '—' : tag.realMeasurement,
                           style: GoogleFonts.poppins(color: Colors.white54, fontSize: 11))),
                       // Unit (editable)
                       Expanded(flex: 1, child: isEditing
@@ -571,14 +649,14 @@ class _StreamTableState extends State<_StreamTable> {
                             ? Row(mainAxisSize: MainAxisSize.min, children: [
                                 const SizedBox(width: 8),
                                 _IBtn(Icons.check, const Color(0xFF39FF14), 'Save',
-                                    () => _saveEdit(context, tag.fieldName)),
+                                    () => _saveEdit(context, tag)),
                                 _IBtn(Icons.close, Colors.white38, 'Cancel',
-                                    () => _cancelEdit(tag.fieldName)),
+                                    () => _cancelEdit(tag)),
                               ])
                             : Row(mainAxisSize: MainAxisSize.min, children: [
                                 const SizedBox(width: 8),
                                 // 1. Reconnect — targeted re-fetch for this tag
-                                state.reconnectingKeys.contains('${tag.measurement}.${tag.fieldName}')
+                                state.reconnectingKeys.contains('${tag.measurement}.${tag.realMeasurement}.${tag.fieldName}')
                                     ? const Padding(
                                         padding: EdgeInsets.all(4),
                                         child: SizedBox(width: 14, height: 14,
@@ -608,6 +686,7 @@ class _StreamTableState extends State<_StreamTable> {
                                         fieldName: tag.fieldName,
                                         unit: tag.unit,
                                         tagName: tag.tagName.isNotEmpty ? tag.tagName : tag.fieldName,
+                                        realMeasurement: tag.realMeasurement,
                                       ));
                                 }),
                                 // 6. Delete
@@ -674,9 +753,11 @@ class _HistoryDialog extends StatefulWidget {
   final String fieldName;
   final String unit;
   final String tagName;
+  final String realMeasurement;
   const _HistoryDialog({
     required this.deviceId, required this.fieldName,
     required this.unit, required this.tagName,
+    this.realMeasurement = '',
   });
 
   @override
@@ -698,7 +779,7 @@ class _HistoryDialogState extends State<_HistoryDialog> {
   Future<void> _load() async {
     setState(() => _loading = true);
     final pts = await _svc.fetchFieldHistory(
-        widget.deviceId, widget.fieldName, range: _range);
+        widget.deviceId, widget.fieldName, range: _range, realMeasurement: widget.realMeasurement);
     if (mounted) setState(() { _points = pts; _loading = false; });
   }
 

@@ -19,20 +19,20 @@ class SankeyFlowData {
 }
 
 class SankeyFlowService {
-  static const String _settingsBase = 'https://api-ui7wk3sz2q-uc.a.run.app/sanky-flow-settings';
-  static const String _facilityBase = 'https://api-ui7wk3sz2q-uc.a.run.app/facilities';
+  static const String _settingsBase = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api/sanky-flow-settings';
+  static const String _facilityBase = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api/facilities';
   // NOTE: Energy Details / PECC use this endpoint for "Current Load (kW)".
   static const String _influxCurrentLoadBase =
-      'https://api-ui7wk3sz2q-uc.a.run.app/energyDetailsInfluxDb/power-load/current';
+      'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetailsInfluxDb/power-load/current';
 
   // Legacy realtime endpoint used for non-kW fields (voltage/current/etc).
   static const String _influxRealtimeBase =
-      'https://api-ui7wk3sz2q-uc.a.run.app/energyDetailsInfluxDb/realtime';
+      'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetailsInfluxDb/realtime';
 
   // Fallback (MySQL aggregated) used across the app when Influx current returns 0.
   static const String _powerLoad24hBase =
-      'https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/power-load-24h';
-  static const String _energyBase = 'https://api-ui7wk3sz2q-uc.a.run.app/energyDetails/total';
+      'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/power-load-24h';
+  static const String _energyBase = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api/energyDetails/total';
 
   static String get _uid => AppStateNotifier.instance.uid ?? '';
 

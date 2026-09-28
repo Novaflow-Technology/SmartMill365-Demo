@@ -85,7 +85,7 @@ class _UserViewState extends State<UserView> {
     } catch (e) {
       debugPrint('Firestore fetchGroups failed, trying API fallback: $e');
       try {
-        final url = Uri.parse('https://api-ic7ypg6ukq-uc.a.run.app/groups/');
+        final url = Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/groups/');
         final response = await http.get(url);
         if (response.statusCode == 200) {
           final fetchedGroups = jsonDecode(response.body);
@@ -253,7 +253,7 @@ class _UserViewState extends State<UserView> {
       debugPrint('Firestore fetchCustomers failed, trying API fallback: $e');
       // Fallback: try the backend API
       try {
-        final url = Uri.parse('https://api-ic7ypg6ukq-uc.a.run.app/users');
+        final url = Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/users');
         final response = await http.get(url);
         if (response.statusCode == 200) {
           final visible = _ownTenantOnly(
@@ -278,7 +278,7 @@ class _UserViewState extends State<UserView> {
 
   Future<void> deleteCustomer(String id) async {
     final url =
-        Uri.parse('https://api-ic7ypg6ukq-uc.a.run.app/users/delete/$id');
+        Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/users/delete/$id');
     try {
       final response = await http.delete(url);
       if (response.statusCode == 200) {
@@ -303,7 +303,7 @@ class _UserViewState extends State<UserView> {
   Future<void> deleteUser(String uid) async {
     try {
       final response = await http.delete(
-        Uri.parse('https://api-ic7ypg6ukq-uc.a.run.app/users/delete'),
+        Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/users/delete'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'uid': uid}),
       );

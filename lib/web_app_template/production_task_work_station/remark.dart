@@ -115,7 +115,7 @@ class _RemarkDialogState extends State<RemarkDialog> {
 
   Future<void> fetchWork() async {
     try {
-      const String apiUrl = "https://api-ic7ypg6ukq-uc.a.run.app/workOrders";
+      const String apiUrl = "https://us-central1-smartmill365-demo.cloudfunctions.net/api/workOrders";
 
       // Send GET request
       final response = await http.get(Uri.parse(apiUrl));

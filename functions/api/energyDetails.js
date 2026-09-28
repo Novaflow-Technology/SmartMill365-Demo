@@ -5,9 +5,9 @@ const mysql = require("mysql2");
 const { getInfluxClient, getInfluxSchema, deviceFilter, ENERGY_FIELD_NAMES, getMysqlPoolSafe } = require("../helpers/dbConnections");
 
 const pool = mysql.createPool({
-  host: "124.217.236.76",
+  host: "",
   user: "novaflow",
-  password: "Nov@flow6889",
+  password: "",
   database: "Danapac_Database",
 });
 

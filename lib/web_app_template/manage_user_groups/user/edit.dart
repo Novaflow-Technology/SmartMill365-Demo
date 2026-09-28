@@ -137,7 +137,7 @@ class _EditCustomerDialogState extends State<EditCustomerDialog> {
   Future<void> fetchFactories() async {
     if (mounted) setState(() => _loadingFactories = true);
     try {
-      final res = await http.get(Uri.parse('https://api-ic7ypg6ukq-uc.a.run.app/factory'));
+      final res = await http.get(Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/factory'));
       if (res.statusCode == 200) {
         final data = json.decode(res.body) as List<dynamic>;
         if (mounted) {
@@ -178,7 +178,7 @@ class _EditCustomerDialogState extends State<EditCustomerDialog> {
     } catch (e) {
       debugPrint('Firestore fetchGroups failed, trying API fallback: $e');
       try {
-        final url = Uri.parse('https://api-ic7ypg6ukq-uc.a.run.app/groups/');
+        final url = Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/groups/');
         final response = await http.get(url);
         if (response.statusCode == 200) {
           final List<dynamic> groupResponse = jsonDecode(response.body);
@@ -227,7 +227,7 @@ class _EditCustomerDialogState extends State<EditCustomerDialog> {
     if (uid == null || uid!.isEmpty) {
       try {
         final apiUrl =
-            'https://api-ic7ypg6ukq-uc.a.run.app/users/id/${widget.id}';
+            'https://us-central1-smartmill365-demo.cloudfunctions.net/api/users/id/${widget.id}';
         final response = await http.get(Uri.parse(apiUrl));
         if (response.statusCode == 200) {
           uid = json.decode(response.body)['UID'];
@@ -359,7 +359,7 @@ class _EditCustomerDialogState extends State<EditCustomerDialog> {
 
       try {
         final url = Uri.parse(
-            'https://api-ic7ypg6ukq-uc.a.run.app/users/updateUserPassword');
+            'https://us-central1-smartmill365-demo.cloudfunctions.net/api/users/updateUserPassword');
         final response = await http.put(
           url,
           headers: {'Content-Type': 'application/json'},
@@ -443,7 +443,7 @@ class _EditCustomerDialogState extends State<EditCustomerDialog> {
 
       // 2. Best-effort: also sync to backend API (fire-and-forget)
       http.put(
-        Uri.parse('https://api-ic7ypg6ukq-uc.a.run.app/users/edit/${widget.id}'),
+        Uri.parse('https://us-central1-smartmill365-demo.cloudfunctions.net/api/users/edit/${widget.id}'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'name': _nameController.text.trim(),

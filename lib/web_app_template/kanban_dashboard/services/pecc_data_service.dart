@@ -180,7 +180,7 @@ class _PeccRequestCache {
 
 /// Resolves PECC mappings → kWh (energyDetails) + RM (TNB Bill Simulator total).
 class PeccDataService {
-  static const _dataBase = 'https://api-ui7wk3sz2q-uc.a.run.app';
+  static const _dataBase = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api';
 
   static String? _bootstrapCacheKey;
   static DateTime? _bootstrapCacheAt;

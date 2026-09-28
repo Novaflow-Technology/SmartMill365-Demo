@@ -24,8 +24,8 @@ import 'package:smartmachine365/flutter_flow/helper/parse_double_value.dart';
 
 // Configuration class for API URLs
 class ApiConfig {
-  static const String baseUrl = 'https://api-ic7ypg6ukq-uc.a.run.app';
-  static const String dataUrl = 'https://api-ui7wk3sz2q-uc.a.run.app';
+  static const String baseUrl = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api';
+  static const String dataUrl = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api';
   static String get productionAreas => '$baseUrl/productionAreas';
   static String equipment(String productionAreaId) =>
       '$baseUrl/productionAreas/equipment/$productionAreaId';

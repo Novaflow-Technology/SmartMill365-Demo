@@ -57,7 +57,7 @@ class _EditGroupDialogState extends State<EditGroupDialog> {
 
     try {
       final url = Uri.parse(
-          'https://api-ic7ypg6ukq-uc.a.run.app/groups/edit/${widget.id}');
+          'https://us-central1-smartmill365-demo.cloudfunctions.net/api/groups/edit/${widget.id}');
       final response = await http.put(
         url,
         headers: {'Content-Type': 'application/json'},

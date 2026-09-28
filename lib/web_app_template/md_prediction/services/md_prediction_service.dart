@@ -60,7 +60,7 @@ class MdPredictionService {
   MdPredictionService._();
 
   static const String _baseEnergy =
-      'https://api-ui7wk3sz2q-uc.a.run.app';
+      'https://us-central1-smartmill365-demo.cloudfunctions.net/api';
 
   // ── Device list ───────────────────────────────────────────────────────
 
@@ -251,7 +251,7 @@ class MdPredictionService {
 
     // Use the /discoveryDevice/ base (matches the confirmed working endpoint
     // used by InfluxDiscoveryService across the rest of the app).
-    const _baseDiscovery = 'https://api-ui7wk3sz2q-uc.a.run.app/discoveryDevice';
+    const _baseDiscovery = 'https://us-central1-smartmill365-demo.cloudfunctions.net/api/discoveryDevice';
 
     // 1. Try each kW field — first non-null positive value wins.
     for (final field in kwFields) {
