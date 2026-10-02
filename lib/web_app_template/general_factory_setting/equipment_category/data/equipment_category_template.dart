@@ -10,10 +10,34 @@ const List<Map<String, dynamic>> kEquipmentCategoryGroupTemplate = [
   {'id': 'cg-3', 'name': 'HVAC & Cooling',            'category_code': 'HVAC'},
   {'id': 'cg-4', 'name': 'Utility Equipment',         'category_code': 'UTIL'},
   {'id': 'cg-5', 'name': 'Sensor / Instrument',       'category_code': 'SENS'},
+  // Mill stations: equipment in these categories become cards on the
+  // Equipment Monitoring → Sterilizer / Digester pages.
+  {'id': 'cg-6', 'name': 'Sterilizer',                'category_code': 'STER'},
+  {'id': 'cg-7', 'name': 'Digester',                  'category_code': 'DIGS'},
 ];
 
 // ── Equipment Types (full device-type records) ────────────────────────────────
 const List<Map<String, dynamic>> kEquipmentCategoryTemplate = [
+  {
+    'id': 'st-1',
+    'device_type': 'Sterilizer',
+    'device_code': 'STZ',
+    'equipment_category': 'Sterilizer',
+    'category_code': 'STER',
+    'electrical_parent': 'Sub DB',
+    'oee_module': 'Optional',
+    'energy_module': 'No',
+  },
+  {
+    'id': 'st-2',
+    'device_type': 'Digester & Screw Press',
+    'device_code': 'DIG',
+    'equipment_category': 'Digester',
+    'category_code': 'DIGS',
+    'electrical_parent': 'Sub DB',
+    'oee_module': 'Optional',
+    'energy_module': 'Yes',
+  },
   {
     'id': '1',
     'device_type': 'Main Switch Board (MSB)',

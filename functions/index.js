@@ -63,6 +63,7 @@ const abnormalReasonFunctions = require("./api/abnormalReasonFunctions");
 const emissionFactorFunctions = require("./api/emissionFactorFunctions");
 const sankyFlowSettingFunction = require("./api/sankyFlowSettingFunction");
 const carbonDashboardConfigFunction = require("./api/carbonDashboardConfigFunction");
+const stationPageSettingFunction = require("./api/stationPageSettingFunction");
 const airCompressorDashboardConfigFunction = require("./api/airCompressorDashboardConfigFunction");
 const mdInsightReportConfigFunction = require("./api/mdInsightReportConfigFunction");
 const maxDemandChartConfigFunction = require("./api/maxDemandChartConfigFunction");
@@ -100,6 +101,7 @@ app.use("/facilities", facilityFunctions); // Handles facility-related operation
 app.use("/tariff-categories", tariffCategorySetupFunction); // Handles tariff category setup operations
 app.use("/sankey-setting", sankyFlowSettingFunction); // Handles sankey flow setting operations
 app.use("/carbon-dashboard-config", carbonDashboardConfigFunction); // Handles Carbon Intelligence Dashboard card→Device ID config
+app.use("/station-page-settings", stationPageSettingFunction); // Sterilizer / Digester station page settings
 app.use("/air-compressor-dashboard-config", airCompressorDashboardConfigFunction); // Handles Air Compressor Monitoring dashboard card→Device ID config
 app.use("/md-insight-report-config", mdInsightReportConfigFunction); // Handles MD Insight Report plant photo/footer logo image config
 app.use("/max-demand-chart-config", maxDemandChartConfigFunction); // Handles Max Demand Monitoring Equipment Load Correlation / Equipment MD Ranking chart device selection

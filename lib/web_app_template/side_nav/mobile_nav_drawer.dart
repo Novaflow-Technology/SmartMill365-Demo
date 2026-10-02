@@ -491,6 +491,8 @@ class _MobileNavDrawerState extends State<MobileNavDrawer> {
                         _subItem('Equipment Details',     'EquipmentDetails',    module: AppRoles.kModuleEquipmentDetails),
                         _subItem('Production Line KPI',   'ProductionLineKPI',   module: AppRoles.kModuleProductionLineKpi),
                         _subItem('Machine KPI',           'MachineKPI',          module: AppRoles.kModuleMachineKpi),
+                        _subItem('Sterilizer',            'SterilizerStation',   module: AppRoles.kModuleEquipmentOverview),
+                        _subItem('Digester',              'DigesterStation',     module: AppRoles.kModuleEquipmentOverview),
                       ],
                     ),
 
@@ -647,6 +649,7 @@ class _MobileNavDrawerState extends State<MobileNavDrawer> {
                       children: [
                         _subItem('Master Facility',       'MasterFacilitySetting',  module: AppRoles.kModuleMasterFacilitySetting),
                         _subItem('Kanban Dashboard Setting','KanbanDashboardSettings',module: AppRoles.kModuleKanbanDashboardSettings),
+                        _subItem('Station Page Setting','StationPageSetting',module: AppRoles.kModuleKanbanDashboardSettings),
                         _subItem('Group POM Command Center', 'PomGroupCommandCenterSetting'),
                         _subItem('Plant',                 'GfsPlant',               module: AppRoles.kModuleGfsPlant),
                         _subItem('Production Block',      'GfsProductionArea',      module: AppRoles.kModuleGfsProductionArea),

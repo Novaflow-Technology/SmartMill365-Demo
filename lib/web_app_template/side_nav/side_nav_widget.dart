@@ -631,6 +631,8 @@ class _SideNavWidgetState extends State<SideNavWidget> {
                                 _navItem(context, 'Equipment Details', 'EquipmentDetails', module: AppRoles.kModuleEquipmentDetails),
                                 _navItem(context, 'Production Line KPI', 'ProductionLineKPI', module: AppRoles.kModuleProductionLineKpi),
                                 _navItem(context, 'Machine KPI', 'MachineKPI', module: AppRoles.kModuleMachineKpi),
+                                _navItem(context, 'Sterilizer', 'SterilizerStation', module: AppRoles.kModuleEquipmentOverview),
+                                _navItem(context, 'Digester', 'DigesterStation', module: AppRoles.kModuleEquipmentOverview),
                               ],
                             ),
 
@@ -827,6 +829,8 @@ class _SideNavWidgetState extends State<SideNavWidget> {
                                   modules: const [AppRoles.kModuleKanbanDashboardSettings],
                                   children: [
                                     _navItem(context, 'Kanban Dashboard Setting', 'KanbanDashboardSettings',
+                                        module: AppRoles.kModuleKanbanDashboardSettings),
+                                    _navItem(context, 'Station Page Setting', 'StationPageSetting',
                                         module: AppRoles.kModuleKanbanDashboardSettings),
                                     _navItem(context, 'Group POM Command Center', 'PomGroupCommandCenterSetting'),
                                   ],

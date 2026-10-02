@@ -55,6 +55,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 
 import 'router_tracker.dart';
+import '/web_app_template/station_page/station_page_widget.dart';
+import '/web_app_template/station_page/station_setting_widget.dart';
 
 const kTransitionInfoKey = '__transition_info__';
 
@@ -634,6 +636,32 @@ GoRouter createRouter(AppStateNotifier appStateNotifier) => GoRouter(
           // Dashboard — all roles
           rolesAllowed: ['Viewer', 'Super Admin', 'Admin', 'Manager', 'Engineer', 'Operator'],
           builder: (context, params) => const MainLayout(child: EquipmentOverviewWidget()),
+        ),
+        // Equipment Monitoring station pages: one card per equipment whose
+        // category is the station's (set up in Equipment Settings).
+        FFRoute(
+          name: 'SterilizerStation',
+          path: '/sterilizerStation',
+          rolesAllowed: ['Viewer', 'Super Admin', 'Admin', 'Manager', 'Engineer', 'Operator'],
+          builder: (context, params) => const MainLayout(
+              child: StationPageWidget(key: ValueKey('station-sterilizer'), stationKey: 'sterilizer')),
+        ),
+        FFRoute(
+          name: 'DigesterStation',
+          path: '/digesterStation',
+          rolesAllowed: ['Viewer', 'Super Admin', 'Admin', 'Manager', 'Engineer', 'Operator'],
+          builder: (context, params) => const MainLayout(
+              child: StationPageWidget(key: ValueKey('station-digester'), stationKey: 'digester')),
+        ),
+        FFRoute(
+          name: 'StationPageSetting',
+          path: '/stationPageSetting',
+          rolesAllowed: ['Super Admin', 'Admin', 'Manager'],
+          builder: (context, params) {
+            final station = params.getParam('station', ParamType.String) as String?;
+            return MainLayout(
+                child: StationSettingWidget(key: ValueKey('station-setting-${station ?? ''}'), initialStation: station));
+          },
         ),
         FFRoute(
             name: 'AlarmSettings',
